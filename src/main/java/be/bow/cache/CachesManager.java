@@ -2,8 +2,8 @@ package be.bow.cache;
 
 import be.bow.application.CloseableComponent;
 import be.bow.application.annotations.BowComponent;
-import be.bow.application.memory.MemoryManager;
 import be.bow.application.memory.MemoryGobbler;
+import be.bow.application.memory.MemoryManager;
 import be.bow.application.status.StatusViewable;
 import be.bow.counts.Counter;
 import be.bow.ui.UI;
