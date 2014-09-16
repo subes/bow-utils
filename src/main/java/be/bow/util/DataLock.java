@@ -51,12 +51,30 @@ public class DataLock {
         return (int) (key % NUM_OF_LOCKS);
     }
 
+    public void lockReadAll() {
+        for (Semaphore lock : locks) {
+            lock.acquireUninterruptibly(1);
+        }
+        if (DEBUG) {
+            UI.writeStackTrace("Locked all read");
+        }
+    }
+
+    public void unlockReadAll() {
+        for (Semaphore lock : locks) {
+            lock.release(1);
+        }
+        if (DEBUG) {
+            UI.writeStackTrace("Unlocked all read");
+        }
+    }
+
     public void lockWriteAll() {
         for (Semaphore lock : locks) {
             lock.acquireUninterruptibly(NUM_OF_PERMITS);
         }
         if (DEBUG) {
-            UI.writeStackTrace("Locked all");
+            UI.writeStackTrace("Locked all write");
         }
     }
 
@@ -65,7 +83,7 @@ public class DataLock {
             lock.release(NUM_OF_PERMITS);
         }
         if (DEBUG) {
-            UI.writeStackTrace("Unlocked all");
+            UI.writeStackTrace("Unlocked all write");
         }
     }
 }

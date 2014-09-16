@@ -7,6 +7,7 @@ import be.bow.application.memory.MemoryManager;
 import be.bow.application.status.StatusViewable;
 import be.bow.counts.Counter;
 import be.bow.ui.UI;
+import be.bow.util.DataLock;
 import be.bow.util.KeyValue;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -23,12 +24,12 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
     private MemoryManager memoryManager;
     private FlushWriteBufferThread flushWriteBufferThread;
     private RemoveOldValuesThread removeOldValuesThread;
-
-    private final static String NULL_VALUE = "xxxxxNULLxxxx";
+    private DataLock[] writeLocks;
 
     @Autowired
     public CachesManager(MemoryManager memoryManager) {
-        caches = new Cache[0];
+        this.caches = new Cache[0];
+        this.writeLocks = new DataLock[0];
         this.memoryManager = memoryManager;
         this.memoryManager.registerMemoryGobbler(this);
         this.flushWriteBufferThread = new FlushWriteBufferThread(this, memoryManager);
@@ -43,32 +44,17 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
         }
         Cache<T> cache = caches[cacheInd];
         cache.incrementFetches();
-        T cachedObj = cache.getCachedObjects().get(key);
+        T cachedObj = cache.get(key);
         if (cachedObj != null) {
             cache.incrementHits();
-        } else {
-            //maybe in old objects?
-            cachedObj = cache.getOldCachedObjects().remove(key);
-            if (cachedObj != null) {
-                //put in new
-                cache.getCachedObjects().put(key, cachedObj);
-                cache.incrementHits();
-            }
-        }
-        if (cachedObj == NULL_VALUE) {
-            cachedObj = null;
         }
         return cachedObj;
     }
 
     public <T> void put(int cacheInd, long key, T value) {
         Cache<T> cache = caches[cacheInd];
-        if (value == null) {
-            ((Cache) cache).getCachedObjects().put(key, NULL_VALUE);
-        } else {
-            value = makeSharedValueIfPossible(value, cache);
-            cache.getCachedObjects().put(key, value);
-        }
+        value = makeSharedValueIfPossible(value, cache);
+        cache.put(key, value);
     }
 
     private <T> T makeSharedValueIfPossible(T value, Cache<T> cache) {
@@ -76,7 +62,7 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
         if (valueCanBeCommon(value)) {
             if (commonValues == null) {
                 //Can we compute the common values?
-                if (cache.getCommonValues() == null && cache.getCachedObjects().size() > 10000) {
+                if (cache.getCommonValues() == null && cache.size() > 10000) {
                     cache.setCommonValues(computeCommonValues(cache));
                 }
             } else {
@@ -91,22 +77,12 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
     }
 
     private <T> boolean valueCanBeCommon(T value) {
-        return value instanceof String || value instanceof Long || value instanceof Byte || value instanceof Character || value instanceof Boolean || value instanceof Double || value instanceof Float;
-    }
-
-    public void remove(int cacheInd, long key) {
-        Cache<?> cache = caches[cacheInd];
-        if (!cache.getCachedObjects().isEmpty()) {
-            cache.getCachedObjects().remove(key);
-        }
-        if (!cache.getOldCachedObjects().isEmpty()) {
-            cache.getOldCachedObjects().remove(key);
-        }
+        return value != null && (value instanceof String || value instanceof Long || value instanceof Byte || value instanceof Character || value instanceof Boolean || value instanceof Double || value instanceof Float);
     }
 
     public void flush(int cacheInd) {
         Cache cache = caches[cacheInd];
-        flush(cache);
+        flush(cache, cacheInd);
     }
 
     /**
@@ -116,30 +92,26 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
      * before the writing of the data to the underlying datainterface, since this is usually the slow part of the flush.
      */
 
-    void flush(Cache cache) {
+    private void flush(final Cache cache, int cacheInd) {
         synchronized (cache.getFlushLock()) {
-            cache.getWriteLock().lockWriteAll();
+            lockWriteAll(cacheInd);
             cache.setTimeOfLastFlush(System.currentTimeMillis());
-            List<KeyValue> valuesToRemove = new ArrayList<>();
-            Iterator<Map.Entry<Long, Object>> iterator = cache.iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<Long, Object> next = iterator.next();
-                Object value = next.getValue();
-                if (value == NULL_VALUE) {
-                    value = null;
+            final List<KeyValue> valuesToRemove = new ArrayList<>();
+            cache.doActionOnValues(new Cache.ValueAction() {
+                @Override
+                public void doAction(long key, Object value) {
+                    valuesToRemove.add(new KeyValue(key, value));
+                    if (valuesToRemove.size() > FLUSH_BATCH_SIZE) {
+                        cache.getData().removedValues(cache.getIndex(), valuesToRemove);
+                        valuesToRemove.clear();
+                    }
                 }
-                valuesToRemove.add(new KeyValue(next.getKey(), value));
-                iterator.remove(); //Free some memory
-                if (valuesToRemove.size() > FLUSH_BATCH_SIZE) {
-                    cache.getData().removedValues(cache.getIndex(), valuesToRemove);
-                    valuesToRemove.clear();
-                }
-            }
+            });
             cache.clear(); //also clear old cached objects
-            cache.getWriteLock().unlockWriteAll();
             if (!valuesToRemove.isEmpty()) {
                 cache.getData().removedValues(cache.getIndex(), valuesToRemove);
             }
+            unlockWriteAll(cacheInd);
 
         }
     }
@@ -164,19 +136,18 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
                 long timeSinceLastClean = System.currentTimeMillis() - cache.getTimeOfLastClean();
                 removeData = removeData || cacheFlushType == CacheFlushType.NOT_USED_IN_LONG_TIME && timeSinceLastClean >= CachesManager.TIME_FOR_VALUES_TO_BE_INVALIDATED;
                 if (removeData) {
-                    cache.getWriteLock().lockWriteAll();
                     cache.moveCachedObjectsToOld();
-                    cache.getWriteLock().unlockWriteAll();
                 }
             }
         }
     }
 
     public void flushWriteBuffers(long timeDiff) {
-        for (Cache cache : caches) {
-            if (cache.isWriteBuffer() && !cache.getCachedObjects().isEmpty() && System.currentTimeMillis() - cache.getTimeOfLastFlush() >= timeDiff) {
+        for (int cacheInd = 0; cacheInd < caches.length; cacheInd++) {
+            Cache cache = caches[cacheInd];
+            if (cache.isWriteBuffer() && cache.size() > 0 && System.currentTimeMillis() - cache.getTimeOfLastFlush() >= timeDiff) {
                 try {
-                    flush(cache);
+                    flush(cache, cacheInd);
                 } catch (Exception exp) {
                     throw new RuntimeException("Received exception while flushing cache " + cache.getData().getName(), exp);
                 }
@@ -185,18 +156,15 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
     }
 
     private Map computeCommonValues(Cache cache) {
-        Counter<Object> counter = new Counter<>();
-        int counts = 0;
-        Map<Object, Object> cachedObjects = cache.getCachedObjects();
-        for (Object obj : cachedObjects.values()) {
-            if (valueCanBeCommon(obj)) {
-                counter.inc(obj);
-                counts++;
-                if (counts >= 10000) {
-                    break;
+        final Counter<Object> counter = new Counter<>();
+        cache.doActionOnValues(new Cache.ValueAction() {
+            @Override
+            public void doAction(long key, Object value) {
+                if (counter.size() < 10000 && valueCanBeCommon(value)) {
+                    counter.inc(value);
                 }
             }
-        }
+        });
         List<Object> sorted = counter.sortedKeys();
         Map<Object, Object> result = new HashMap<>();
         for (int i = 0; i < sorted.size() && i < 1000; i++) {
@@ -209,7 +177,7 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
         long result = 0;
         for (Cache cache : caches) {
             if (!cache.isWriteBuffer()) {
-                result += cache.getCachedObjects().size() + cache.getOldCachedObjects().size();
+                result += cache.completeSize();
             }
         }
         return result;
@@ -220,7 +188,7 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
         long result = 0;
         for (Cache cache : caches) {
             if (cache.isWriteBuffer()) {
-                result += cache.getCachedObjects().size() + cache.getOldCachedObjects().size();
+                result += cache.size();
             }
         }
         return result;
@@ -232,6 +200,9 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
         Cache newCache = new Cache<T>(cacheableData, ind, isWriteBuffer);
         newCaches[ind] = newCache;
         caches = newCaches;
+        DataLock[] newWriteLocks = Arrays.copyOf(writeLocks, writeLocks.length + 1);
+        newWriteLocks[ind] = new DataLock();
+        writeLocks = newWriteLocks;
         return ind;
     }
 
@@ -239,13 +210,17 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
         return caches;
     }
 
-    public Map getCache(int cacheInd) {
-        return caches[cacheInd].getCachedObjects();
+    public Cache getCache(int cacheInd) {
+        return caches[cacheInd];
+    }
+
+    public void remove(int cacheInd, long key) {
+        caches[cacheInd].remove(key);
     }
 
     public void flushAll() {
-        for (Cache cache : caches) {
-            flush(cache);
+        for (int cacheInd = 0; cacheInd < caches.length; cacheInd++) {
+            flush(caches[cacheInd], cacheInd);
         }
     }
 
@@ -256,22 +231,22 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
         Collections.sort(caches, new Comparator<Cache>() {
             @Override
             public int compare(Cache o1, Cache o2) {
-                return -Double.compare(o1.getCachedObjects().size(), o2.getCachedObjects().size());
+                return -Double.compare(o1.size(), o2.size());
             }
         });
         for (Cache cache : caches) {
             double hitRatio = cache.getNumHits() == 0 ? 0 : cache.getNumHits() / (double) cache.getNumOfFetches();
-            sb.append(cache.getData().getName() + " (" + cache.getIndex() + ") size=" + cache.getCachedObjects().size() + " fetches=" + cache.getNumOfFetches() + " hits=" + cache.getNumHits() + " hitRatio=" + hitRatio);
+            sb.append(cache.getData().getName() + " (" + cache.getIndex() + ") size=" + cache.size() + " fetches=" + cache.getNumOfFetches() + " hits=" + cache.getNumHits() + " hitRatio=" + hitRatio);
             sb.append("<br>");
         }
     }
 
     public void lockWrite(int cacheInd, long key) {
-        caches[cacheInd].getWriteLock().lockWrite(key);
+        writeLocks[cacheInd].lockWrite(key);
     }
 
     public void unlockWrite(int cacheInd, long key) {
-        caches[cacheInd].getWriteLock().unlockWrite(key);
+        writeLocks[cacheInd].unlockWrite(key);
     }
 
     @Override
@@ -284,11 +259,11 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
     }
 
     public void lockWriteAll(int cacheInd) {
-        caches[cacheInd].getWriteLock().lockWriteAll();
+        writeLocks[cacheInd].lockWriteAll();
     }
 
     public void unlockWriteAll(int cacheInd) {
-        caches[cacheInd].getWriteLock().unlockWriteAll();
+        writeLocks[cacheInd].unlockWriteAll();
     }
 
 }

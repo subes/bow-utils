@@ -11,5 +11,7 @@ public interface CacheableData<T> {
 
     String getName();
 
+    Class<? extends T> getObjectClass();
+
     CacheImportance getImportance();
 }

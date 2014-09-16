@@ -1,7 +1,7 @@
 package be.bow.util;
 
 import be.bow.text.*;
-import gnu.trove.list.array.TCharArrayList;
+import it.unimi.dsi.fastutil.chars.CharArrayList;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -18,7 +18,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
     public static final int NUM_OF_PADDED_SPACES = 1;
 
     static final char[] quotes = {'"', '\'', '‘', '’', '“', '”'};
-    private static final TCharArrayList characterMapping = new TCharArrayList();
+    private static final CharArrayList characterMapping = new CharArrayList();
 
     /**
      * Remove slashes from inputString
