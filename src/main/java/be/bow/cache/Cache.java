@@ -1,33 +1,36 @@
 package be.bow.cache;
 
+import be.bow.counts.Counter;
+import be.bow.util.KeyValue;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 
 public class Cache<T> {
 
+    private static final int FLUSH_BATCH_SIZE = 1000000;
     private static final int NUMBER_OF_SEGMENTS = 64;
     private static final int NUMBER_OF_READ_PERMITS = 1000;
 
     private final CacheableData data;
-    private final int index;
     private final Semaphore[] locks;
     private final Map<Long, T>[] cachedObjects;
     private final Map<Long, T>[] oldCachedObjects;
-    private final String flushLock = new String("FLUSH_LOCK"); //Needs to be new object
     private final boolean isWriteBuffer;
     private final T nullValue;
+    private final String name;
 
     private int numHits;
     private int numOfFetches;
     private Map<T, T> commonValues;
-    private long timeOfLastClean;
-    private long timeOfLastFlush;
 
-    public Cache(CacheableData data, int index, boolean isWriteBuffer) {
+    public Cache(CacheableData<T> data, boolean isWriteBuffer, String name) {
         this.data = data;
         this.cachedObjects = new Map[NUMBER_OF_SEGMENTS];
         createMaps(cachedObjects);
@@ -40,30 +43,19 @@ public class Cache<T> {
         this.numHits = 0;
         this.numOfFetches = 0;
         this.commonValues = null; //Will be initialized once we have enough values
-        this.index = index;
-        this.timeOfLastClean = System.currentTimeMillis();
-        this.timeOfLastFlush = System.currentTimeMillis();
         this.isWriteBuffer = isWriteBuffer;
         this.nullValue = getNullValueForType(data.getObjectClass());
-    }
-
-    private T getNullValueForType(Class objectClass) {
-        if (objectClass == Long.class) {
-            return (T) new Long(Long.MAX_VALUE);
-        } else if (objectClass == Double.class) {
-            return (T) new Double(Double.MAX_VALUE);
-        } else {
-            return (T) "xxxNULLxxx";
-        }
+        this.name = name;
     }
 
     public T get(long key) {
+        incrementFetches();
         int cacheInd = getCacheInd(key);
         lockRead(cacheInd);
-        T result = (T) cachedObjects[cacheInd].get(key);
+        T result = cachedObjects[cacheInd].get(key);
         if (result == null) {
             //maybe in old objects?
-            result = (T) oldCachedObjects[cacheInd].remove(key);
+            result = oldCachedObjects[cacheInd].remove(key);
             unlockRead(cacheInd);
             if (result != null) {
                 lockWrite(cacheInd);
@@ -76,6 +68,7 @@ public class Cache<T> {
         } else {
             unlockRead(cacheInd);
         }
+        incrementHits();
         if (result.equals(nullValue)) {
             return null;
         } else {
@@ -86,6 +79,8 @@ public class Cache<T> {
     public void put(long key, T value) {
         if (value == null) {
             value = nullValue;
+        } else {
+            value = makeSharedValueIfPossible(value);
         }
         int cacheInd = getCacheInd(key);
         lockWrite(cacheInd);
@@ -94,57 +89,21 @@ public class Cache<T> {
         unlockWrite(cacheInd);
     }
 
-    private void lockRead(int cacheInd) {
-        locks[cacheInd].acquireUninterruptibly(1);
-    }
-
-    private void unlockRead(int cacheInd) {
-        locks[cacheInd].release(1);
-    }
-
-    private void lockReadAll() {
-        for (int i = 0; i < NUMBER_OF_SEGMENTS; i++) {
-            locks[i].acquireUninterruptibly(1);
-        }
-    }
-
-    private void unlockReadAll() {
-        for (int i = 0; i < NUMBER_OF_SEGMENTS; i++) {
-            locks[i].release(1);
-        }
-    }
-
-    private void lockWrite(int cacheInd) {
-        locks[cacheInd].acquireUninterruptibly(NUMBER_OF_READ_PERMITS);
-    }
-
-    private void unlockWrite(int cacheInd) {
-        locks[cacheInd].release(NUMBER_OF_READ_PERMITS);
-    }
-
-    private void lockWriteAll() {
-        for (int i = 0; i < NUMBER_OF_SEGMENTS; i++) {
-            locks[i].acquireUninterruptibly(NUMBER_OF_READ_PERMITS);
-        }
-    }
-
-    private void unlockWriteAll() {
-        for (int i = 0; i < NUMBER_OF_SEGMENTS; i++) {
-            locks[i].release(NUMBER_OF_READ_PERMITS);
-        }
-    }
-
-    public void doActionOnValues(ValueAction<T> valueAction) {
-        for (int cacheInd = 0; cacheInd < NUMBER_OF_SEGMENTS; cacheInd++) {
-            lockRead(cacheInd);
-            for (Map.Entry<Long, T> entry : cachedObjects[cacheInd].entrySet()) {
-                T value = entry.getValue();
-                if (value.equals(nullValue)) {
-                    value = null;
+    public void flush() {
+        final List<KeyValue> valuesToRemove = new ArrayList<>();
+        doActionOnValues(new ValueAction() {
+            @Override
+            public void doAction(long key, Object value) {
+                valuesToRemove.add(new KeyValue(key, value));
+                if (valuesToRemove.size() > FLUSH_BATCH_SIZE) {
+                    getData().removedValues(Cache.this, valuesToRemove);
+                    valuesToRemove.clear();
                 }
-                valueAction.doAction(entry.getKey(), value);
             }
-            unlockRead(cacheInd);
+        });
+        clear(); //also clear old cached objects
+        if (!valuesToRemove.isEmpty()) {
+            getData().removedValues(this, valuesToRemove);
         }
     }
 
@@ -155,55 +114,6 @@ public class Cache<T> {
     public void clear() {
         createMaps(cachedObjects);
         createMaps(oldCachedObjects);
-        timeOfLastClean = System.currentTimeMillis();
-    }
-
-    public Map<T, T> getCommonValues() {
-        return commonValues;
-    }
-
-    public void setCommonValues(Map commonValues) {
-        this.commonValues = commonValues;
-    }
-
-    public void incrementFetches() {
-        this.numOfFetches++;
-    }
-
-    public void incrementHits() {
-        this.numHits++;
-    }
-
-    public int getNumHits() {
-        return numHits;
-    }
-
-    public int getNumOfFetches() {
-        return numOfFetches;
-    }
-
-    public int getIndex() {
-        return index;
-    }
-
-    public long getTimeOfLastClean() {
-        return timeOfLastClean;
-    }
-
-    public long getTimeOfLastFlush() {
-        return timeOfLastFlush;
-    }
-
-    public void setTimeOfLastFlush(long timeOfLastFlush) {
-        this.timeOfLastFlush = timeOfLastFlush;
-    }
-
-    public String getFlushLock() {
-        return flushLock;
-    }
-
-    public boolean isWriteBuffer() {
-        return isWriteBuffer;
     }
 
     public void moveCachedObjectsToOld() {
@@ -213,23 +123,6 @@ public class Cache<T> {
         }
         createMaps(cachedObjects);
         unlockWriteAll();
-        this.timeOfLastClean = System.currentTimeMillis();
-    }
-
-    private void createMaps(Map[] result) {
-        for (int i = 0; i < result.length; i++) {
-            if (data.getObjectClass() == Long.class) {
-                result[i] = new Long2LongOpenHashMap();
-            } else if (data.getObjectClass() == Double.class) {
-                result[i] = new Long2DoubleOpenHashMap();
-            } else {
-                result[i] = new Long2ObjectOpenHashMap();
-            }
-        }
-    }
-
-    private int getCacheInd(long key) {
-        return (int) ((key >> 59) + 32); //divide by 32 and add 32 (because of negative keys)
     }
 
     public long size() {
@@ -254,7 +147,140 @@ public class Cache<T> {
         oldCachedObjects[cacheInd].remove(key);
     }
 
-    public static interface ValueAction<T> {
+    public String getName() {
+        return name;
+    }
+
+    public int getNumberOfHits() {
+        return numHits;
+    }
+
+    public int getNumberOfFetches() {
+        return numOfFetches;
+    }
+
+    public boolean isWriteBuffer() {
+        return isWriteBuffer;
+    }
+
+    private static <T> T getNullValueForType(Class<T> objectClass) {
+        if (objectClass == Long.class) {
+            return (T) new Long(Long.MAX_VALUE);
+        } else if (objectClass == Double.class) {
+            return (T) new Double(Double.MAX_VALUE);
+        } else {
+            return (T) "xxxNULLxxx";
+        }
+    }
+
+    private void lockRead(int cacheInd) {
+        locks[cacheInd].acquireUninterruptibly(1);
+    }
+
+    private void unlockRead(int cacheInd) {
+        locks[cacheInd].release(1);
+    }
+
+    private void lockWrite(int cacheInd) {
+        locks[cacheInd].acquireUninterruptibly(NUMBER_OF_READ_PERMITS);
+    }
+
+    private void unlockWrite(int cacheInd) {
+        locks[cacheInd].release(NUMBER_OF_READ_PERMITS);
+    }
+
+    private void lockWriteAll() {
+        for (int i = 0; i < NUMBER_OF_SEGMENTS; i++) {
+            locks[i].acquireUninterruptibly(NUMBER_OF_READ_PERMITS);
+        }
+    }
+
+    private void unlockWriteAll() {
+        for (int i = 0; i < NUMBER_OF_SEGMENTS; i++) {
+            locks[i].release(NUMBER_OF_READ_PERMITS);
+        }
+    }
+
+    private void doActionOnValues(ValueAction<T> valueAction) {
+        for (int cacheInd = 0; cacheInd < NUMBER_OF_SEGMENTS; cacheInd++) {
+            lockRead(cacheInd);
+            for (Map.Entry<Long, T> entry : cachedObjects[cacheInd].entrySet()) {
+                T value = entry.getValue();
+                if (value.equals(nullValue)) {
+                    value = null;
+                }
+                valueAction.doAction(entry.getKey(), value);
+            }
+            unlockRead(cacheInd);
+        }
+    }
+
+    private void incrementFetches() {
+        this.numOfFetches++;
+    }
+
+    private void incrementHits() {
+        this.numHits++;
+    }
+
+    private void createMaps(Map[] result) {
+        for (int i = 0; i < result.length; i++) {
+            if (data.getObjectClass() == Long.class) {
+                result[i] = new Long2LongOpenHashMap();
+            } else if (data.getObjectClass() == Double.class) {
+                result[i] = new Long2DoubleOpenHashMap();
+            } else {
+                result[i] = new Long2ObjectOpenHashMap();
+            }
+        }
+    }
+
+    private int getCacheInd(long key) {
+        return (int) ((key >> 59) + 32); //divide by 32 and add 32 (because of negative keys)
+    }
+
+    private T makeSharedValueIfPossible(T value) {
+        if (valueCanBeCommon(value)) {
+            if (commonValues == null) {
+                //Can we compute the common values?
+                if (size() > 10000) {
+                    commonValues = computeCommonValues();
+                }
+            }
+            if (commonValues != null) {
+                //Fetch common value
+                T commonValue = commonValues.get(value);
+                if (commonValue != null) {
+                    return commonValue;
+                }
+            }
+        }
+        return value;
+    }
+
+    private <T> boolean valueCanBeCommon(T value) {
+        return value != null && (value instanceof String || value instanceof Byte || value instanceof Character || value instanceof Boolean || value instanceof Float);
+    }
+
+    private Map computeCommonValues() {
+        final Counter<Object> counter = new Counter<>();
+        doActionOnValues(new Cache.ValueAction() {
+            @Override
+            public void doAction(long key, Object value) {
+                if (counter.size() < 10000 && valueCanBeCommon(value)) {
+                    counter.inc(value);
+                }
+            }
+        });
+        List<Object> sorted = counter.sortedKeys();
+        Map<Object, Object> result = new HashMap<>();
+        for (int i = 0; i < sorted.size() && i < 1000; i++) {
+            result.put(sorted.get(i), sorted.get(i));
+        }
+        return result;
+    }
+
+    private interface ValueAction<T> {
 
         void doAction(long key, T value);
 

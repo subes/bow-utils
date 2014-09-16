@@ -7,11 +7,8 @@ import java.util.List;
 
 public interface CacheableData<T> {
 
-    void removedValues(int ind, List<KeyValue<T>> valuesToRemove);
-
-    String getName();
+    void removedValues(Cache cache, List<KeyValue<T>> valuesToRemove);
 
     Class<? extends T> getObjectClass();
 
-    CacheImportance getImportance();
 }
