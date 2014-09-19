@@ -1,7 +1,6 @@
 package be.bow.iterator;
 
 import be.bow.ui.UI;
-import be.bow.util.Utils;
 
 import java.io.Closeable;
 import java.util.Iterator;
@@ -9,10 +8,11 @@ import java.util.Iterator;
 public abstract class CloseableIterator<T extends Object> implements Iterator<T>, Closeable {
 
     private boolean wasClosed = false;
-    private final String stackTrace;
+    private final String creatingMethod;
 
     public CloseableIterator() {
-        stackTrace = Utils.getStackTrace(new RuntimeException());
+        StackTraceElement callingMethod = Thread.currentThread().getStackTrace()[2];
+        creatingMethod = callingMethod.getFileName() + ":" + callingMethod.getLineNumber();
     }
 
     @Override
@@ -37,7 +37,7 @@ public abstract class CloseableIterator<T extends Object> implements Iterator<T>
     protected void finalize() throws Throwable {
         super.finalize();
         if (!wasClosed) {
-            UI.writeError("CloseableIterator was not closed!");
+            UI.writeError("CloseableIterator was not closed! Was created in " + creatingMethod);
             close();
         }
     }

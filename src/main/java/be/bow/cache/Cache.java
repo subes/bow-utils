@@ -2,9 +2,7 @@ package be.bow.cache;
 
 import be.bow.counts.Counter;
 import be.bow.util.KeyValue;
-import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,7 +13,8 @@ import java.util.concurrent.Semaphore;
 public class Cache<T> {
 
     private static final int FLUSH_BATCH_SIZE = 1000000;
-    private static final int NUMBER_OF_SEGMENTS = 64;
+    private static final int NUMBER_OF_SEGMENTS_EXPONENT = 7;
+    private static final int NUMBER_OF_SEGMENTS = 1 << NUMBER_OF_SEGMENTS_EXPONENT;
     private static final int NUMBER_OF_READ_PERMITS = 1000;
 
     private final CacheableData data;
@@ -23,6 +22,7 @@ public class Cache<T> {
     private final Map<Long, T>[] cachedObjects;
     private final Map<Long, T>[] oldCachedObjects;
     private final boolean isWriteBuffer;
+    private final Class<? extends T> objectClass;
     private final T nullValue;
     private final String name;
 
@@ -30,8 +30,10 @@ public class Cache<T> {
     private int numOfFetches;
     private Map<T, T> commonValues;
 
-    public Cache(CacheableData<T> data, boolean isWriteBuffer, String name) {
+
+    public Cache(CacheableData<T> data, boolean isWriteBuffer, String name, Class<? extends T> objectClass) {
         this.data = data;
+        this.objectClass = objectClass;
         this.cachedObjects = new Map[NUMBER_OF_SEGMENTS];
         createMaps(cachedObjects);
         this.oldCachedObjects = new Map[NUMBER_OF_SEGMENTS];
@@ -44,29 +46,30 @@ public class Cache<T> {
         this.numOfFetches = 0;
         this.commonValues = null; //Will be initialized once we have enough values
         this.isWriteBuffer = isWriteBuffer;
-        this.nullValue = getNullValueForType(data.getObjectClass());
+        this.nullValue = getNullValueForType(objectClass);
         this.name = name;
     }
 
     public T get(long key) {
         incrementFetches();
-        int cacheInd = getCacheInd(key);
-        lockRead(cacheInd);
-        T result = cachedObjects[cacheInd].get(key);
+        int segmentInd = getSegmentInd(key);
+        lockRead(segmentInd);
+        T result = cachedObjects[segmentInd].get(key);
         if (result == null) {
             //maybe in old objects?
-            result = oldCachedObjects[cacheInd].remove(key);
-            unlockRead(cacheInd);
+            result = oldCachedObjects[segmentInd].get(key);
+            unlockRead(segmentInd);
             if (result != null) {
-                lockWrite(cacheInd);
+                lockWrite(segmentInd);
                 //found in old, put in new
-                cachedObjects[cacheInd].put(key, result);
-                unlockWrite(cacheInd);
+                cachedObjects[segmentInd].put(key, result);
+                oldCachedObjects[segmentInd].remove(key);
+                unlockWrite(segmentInd);
             } else {
                 return null;
             }
         } else {
-            unlockRead(cacheInd);
+            unlockRead(segmentInd);
         }
         incrementHits();
         if (result.equals(nullValue)) {
@@ -79,14 +82,16 @@ public class Cache<T> {
     public void put(long key, T value) {
         if (value == null) {
             value = nullValue;
+        } else if (value.equals(nullValue)) {
+            throw new RuntimeException("Sorry but " + value + " is a reserved value to indicate null.");
         } else {
             value = makeSharedValueIfPossible(value);
         }
-        int cacheInd = getCacheInd(key);
-        lockWrite(cacheInd);
-        cachedObjects[cacheInd].put(key, value);
-        oldCachedObjects[cacheInd].remove(key);
-        unlockWrite(cacheInd);
+        int segmentInd = getSegmentInd(key);
+        lockWrite(segmentInd);
+        cachedObjects[segmentInd].put(key, value);
+        oldCachedObjects[segmentInd].remove(key);
+        unlockWrite(segmentInd);
     }
 
     public void flush() {
@@ -96,14 +101,14 @@ public class Cache<T> {
             public void doAction(long key, Object value) {
                 valuesToRemove.add(new KeyValue(key, value));
                 if (valuesToRemove.size() > FLUSH_BATCH_SIZE) {
-                    getData().removedValues(Cache.this, valuesToRemove);
+                    getData().removedValuesFromCache(Cache.this, valuesToRemove);
                     valuesToRemove.clear();
                 }
             }
         });
         clear(); //also clear old cached objects
         if (!valuesToRemove.isEmpty()) {
-            getData().removedValues(this, valuesToRemove);
+            getData().removedValuesFromCache(this, valuesToRemove);
         }
     }
 
@@ -112,8 +117,10 @@ public class Cache<T> {
     }
 
     public void clear() {
+        lockWriteAll();
         createMaps(cachedObjects);
         createMaps(oldCachedObjects);
+        unlockWriteAll();
     }
 
     public void moveCachedObjectsToOld() {
@@ -142,9 +149,11 @@ public class Cache<T> {
     }
 
     public void remove(long key) {
-        int cacheInd = getCacheInd(key);
-        cachedObjects[cacheInd].remove(key);
-        oldCachedObjects[cacheInd].remove(key);
+        int segmentInd = getSegmentInd(key);
+        lockWrite(segmentInd);
+        cachedObjects[segmentInd].remove(key);
+        oldCachedObjects[segmentInd].remove(key);
+        unlockWrite(segmentInd);
     }
 
     public String getName() {
@@ -168,25 +177,29 @@ public class Cache<T> {
             return (T) new Long(Long.MAX_VALUE);
         } else if (objectClass == Double.class) {
             return (T) new Double(Double.MAX_VALUE);
+        } else if (objectClass == Float.class) {
+            return (T) new Float(Float.MAX_VALUE);
+        } else if (objectClass == Integer.class) {
+            return (T) new Integer(Integer.MAX_VALUE);
         } else {
-            return (T) "xxxNULLxxx";
+            return (T) "xxxNULLxxx"; //we don't use a primitive map, so we can just use any object here
         }
     }
 
-    private void lockRead(int cacheInd) {
-        locks[cacheInd].acquireUninterruptibly(1);
+    private void lockRead(int segmentInd) {
+        locks[segmentInd].acquireUninterruptibly(1);
     }
 
-    private void unlockRead(int cacheInd) {
-        locks[cacheInd].release(1);
+    private void unlockRead(int segmentInd) {
+        locks[segmentInd].release(1);
     }
 
-    private void lockWrite(int cacheInd) {
-        locks[cacheInd].acquireUninterruptibly(NUMBER_OF_READ_PERMITS);
+    private void lockWrite(int segmentInd) {
+        locks[segmentInd].acquireUninterruptibly(NUMBER_OF_READ_PERMITS);
     }
 
-    private void unlockWrite(int cacheInd) {
-        locks[cacheInd].release(NUMBER_OF_READ_PERMITS);
+    private void unlockWrite(int segmentInd) {
+        locks[segmentInd].release(NUMBER_OF_READ_PERMITS);
     }
 
     private void lockWriteAll() {
@@ -202,16 +215,16 @@ public class Cache<T> {
     }
 
     private void doActionOnValues(ValueAction<T> valueAction) {
-        for (int cacheInd = 0; cacheInd < NUMBER_OF_SEGMENTS; cacheInd++) {
-            lockRead(cacheInd);
-            for (Map.Entry<Long, T> entry : cachedObjects[cacheInd].entrySet()) {
+        for (int segmentInd = 0; segmentInd < NUMBER_OF_SEGMENTS; segmentInd++) {
+            lockRead(segmentInd);
+            for (Map.Entry<Long, T> entry : cachedObjects[segmentInd].entrySet()) {
                 T value = entry.getValue();
                 if (value.equals(nullValue)) {
                     value = null;
                 }
                 valueAction.doAction(entry.getKey(), value);
             }
-            unlockRead(cacheInd);
+            unlockRead(segmentInd);
         }
     }
 
@@ -225,9 +238,13 @@ public class Cache<T> {
 
     private void createMaps(Map[] result) {
         for (int i = 0; i < result.length; i++) {
-            if (data.getObjectClass() == Long.class) {
+            if (objectClass == Long.class) {
                 result[i] = new Long2LongOpenHashMap();
-            } else if (data.getObjectClass() == Double.class) {
+            } else if (objectClass == Integer.class) {
+                result[i] = new Long2IntOpenHashMap();
+            } else if (objectClass == Float.class) {
+                result[i] = new Long2FloatOpenHashMap();
+            } else if (objectClass == Double.class) {
                 result[i] = new Long2DoubleOpenHashMap();
             } else {
                 result[i] = new Long2ObjectOpenHashMap();
@@ -235,8 +252,8 @@ public class Cache<T> {
         }
     }
 
-    private int getCacheInd(long key) {
-        return (int) ((key >> 59) + 32); //divide by 32 and add 32 (because of negative keys)
+    private int getSegmentInd(long key) {
+        return (int) ((key >> (64 - NUMBER_OF_SEGMENTS_EXPONENT)) + NUMBER_OF_SEGMENTS / 2);
     }
 
     private T makeSharedValueIfPossible(T value) {
@@ -259,7 +276,7 @@ public class Cache<T> {
     }
 
     private <T> boolean valueCanBeCommon(T value) {
-        return value != null && (value instanceof String || value instanceof Byte || value instanceof Character || value instanceof Boolean || value instanceof Float);
+        return value != null && (value instanceof String || value instanceof Byte || value instanceof Character || value instanceof Boolean);
     }
 
     private Map computeCommonValues() {
