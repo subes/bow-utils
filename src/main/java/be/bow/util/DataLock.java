@@ -6,32 +6,44 @@ import java.util.concurrent.Semaphore;
 
 public class DataLock {
 
-    private static final boolean DEBUG = false;
-
     private static final int NUM_OF_LOCKS = 1000; //Some number an order higher then number of expected simultaneous threads.
     private static final int NUM_OF_PERMITS = 100;
 
-    private Semaphore[] locks;
+    private final boolean debug;
+    private final Semaphore[] locks;
 
     public DataLock() {
+        this(false);
+    }
+
+    public DataLock(boolean debug) {
         this.locks = new Semaphore[NUM_OF_LOCKS];
         for (int i = 0; i < NUM_OF_LOCKS; i++) {
             this.locks[i] = new Semaphore(NUM_OF_PERMITS, false);
         }
+        this.debug = debug;
     }
 
     public void lockRead(long key) {
-        locks[getLockInd(key)].acquireUninterruptibly(1);
+        int lockInd = getLockInd(key);
+        locks[lockInd].acquireUninterruptibly(1);
+        if (debug) {
+            UI.writeStackTrace("Locked read " + lockInd);
+        }
     }
 
     public void unlockRead(long key) {
-        locks[getLockInd(key)].release(1);
+        int lockInd = getLockInd(key);
+        locks[lockInd].release(1);
+        if (debug) {
+            UI.writeStackTrace("Unlocked read " + lockInd);
+        }
     }
 
     public void lockWrite(long key) {
         int lockInd = getLockInd(key);
         locks[lockInd].acquireUninterruptibly(NUM_OF_PERMITS);
-        if (DEBUG) {
+        if (debug) {
             UI.writeStackTrace("Locked write " + lockInd);
         }
     }
@@ -39,7 +51,7 @@ public class DataLock {
     public void unlockWrite(long key) {
         int lockInd = getLockInd(key);
         locks[lockInd].release(NUM_OF_PERMITS);
-        if (DEBUG) {
+        if (debug) {
             UI.writeStackTrace("Unlocked write " + lockInd);
         }
     }
@@ -55,7 +67,7 @@ public class DataLock {
         for (Semaphore lock : locks) {
             lock.acquireUninterruptibly(1);
         }
-        if (DEBUG) {
+        if (debug) {
             UI.writeStackTrace("Locked all read");
         }
     }
@@ -64,7 +76,7 @@ public class DataLock {
         for (Semaphore lock : locks) {
             lock.release(1);
         }
-        if (DEBUG) {
+        if (debug) {
             UI.writeStackTrace("Unlocked all read");
         }
     }
@@ -73,7 +85,7 @@ public class DataLock {
         for (Semaphore lock : locks) {
             lock.acquireUninterruptibly(NUM_OF_PERMITS);
         }
-        if (DEBUG) {
+        if (debug) {
             UI.writeStackTrace("Locked all write");
         }
     }
@@ -82,7 +94,7 @@ public class DataLock {
         for (Semaphore lock : locks) {
             lock.release(NUM_OF_PERMITS);
         }
-        if (DEBUG) {
+        if (debug) {
             UI.writeStackTrace("Unlocked all write");
         }
     }

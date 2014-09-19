@@ -45,7 +45,7 @@ public class MemoryManager implements CloseableComponent {
      */
 
     public void waitForSufficientMemory() {
-        if (!globalCleanInProgressLock.isLocked() || !globalCleanInProgressLock.isHeldByCurrentThread()) {
+        if (memoryStatus == MemoryStatus.CRITICAL && !(globalCleanInProgressLock.isLocked() && globalCleanInProgressLock.isHeldByCurrentThread())) {
             //Don't write until enough memory is free
             long start = System.currentTimeMillis();
             long timeOfLastWarning = System.currentTimeMillis();
