@@ -121,6 +121,21 @@ public class WrappedSocketConnection implements Closeable {
         return value;
     }
 
+    public void writeFloat(float value) throws IOException {
+        if (debug) {
+            UI.write("RI --> " + value);
+        }
+        os.writeFloat(value);
+    }
+
+    public float readFloat() throws IOException {
+        float value = is.readFloat();
+        if (debug) {
+            UI.write("RI <-- " + value);
+        }
+        return value;
+    }
+
     public <T> T readValue(Class<T> objectClass) throws IOException {
         if (objectClass == Long.class) {
             long response = readLong();
@@ -133,6 +148,20 @@ public class WrappedSocketConnection implements Closeable {
             double response = readDouble();
             if (response != BaseServer.DOUBLE_NULL) {
                 return (T) new Double(response);
+            } else {
+                return null;
+            }
+        } else if (objectClass == Integer.class) {
+            int response = readInt();
+            if (response != BaseServer.INT_NULL) {
+                return (T) new Integer(response);
+            } else {
+                return null;
+            }
+        } else if (objectClass == Float.class) {
+            float response = readFloat();
+            if (response != BaseServer.FLOAT_NULL) {
+                return (T) new Float(response);
             } else {
                 return null;
             }
@@ -150,14 +179,34 @@ public class WrappedSocketConnection implements Closeable {
         if (objectClass == Long.class) {
             if (value == null) {
                 writeLong(BaseServer.LONG_NULL);
+            } else if (value.equals(BaseServer.LONG_NULL)) {
+                throw new RuntimeException("Sorry " + value + " is a reserved value to indicate null.");
             } else {
                 writeLong((Long) value);
             }
         } else if (objectClass == Double.class) {
             if (value == null) {
                 writeDouble(BaseServer.DOUBLE_NULL);
+            } else if (value.equals(BaseServer.DOUBLE_NULL)) {
+                throw new RuntimeException("Sorry " + value + " is a reserved value to indicate null.");
             } else {
                 writeDouble((Double) value);
+            }
+        } else if (objectClass == Integer.class) {
+            if (value == null) {
+                writeInt(BaseServer.INT_NULL);
+            } else if (value.equals(BaseServer.INT_NULL)) {
+                throw new RuntimeException("Sorry " + value + " is a reserved value to indicate null.");
+            } else {
+                writeInt((Integer) value);
+            }
+        } else if (objectClass == Float.class) {
+            if (value == null) {
+                writeFloat(BaseServer.FLOAT_NULL);
+            } else if (value.equals(BaseServer.FLOAT_NULL)) {
+                throw new RuntimeException("Sorry " + value + " is a reserved value to indicate null.");
+            } else {
+                writeFloat((Float) value);
             }
         } else {
             byte[] objectAsBytes = SerializationUtils.objectToBytes(value);

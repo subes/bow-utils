@@ -139,15 +139,6 @@ public class SerializationUtils {
         return bytes;
     }
 
-    public static byte[] intToBytes(int value) {
-        byte[] bytes = new byte[4];
-        bytes[0] = (byte) (value >>> 24);
-        bytes[1] = (byte) (value >>> 16);
-        bytes[2] = (byte) (value >>> 8);
-        bytes[3] = (byte) (value);
-        return bytes;
-    }
-
     public static long bytesToLong(byte[] bytes) {
         if (bytes.length < 8) {
             bytes = Arrays.copyOf(bytes, 8);
@@ -163,11 +154,17 @@ public class SerializationUtils {
         return result;
     }
 
+    public static byte[] intToBytes(int value) {
+        byte[] bytes = new byte[4];
+        bytes[0] = (byte) ((value >>> 24));
+        bytes[1] = (byte) ((value >>> 16));
+        bytes[2] = (byte) ((value >>> 8));
+        bytes[3] = (byte) ((value));
+        return bytes;
+    }
+
     public static int bytesToInt(byte[] bytes) {
-        if (bytes.length < 4) {
-            bytes = Arrays.copyOf(bytes, 4);
-        }
-        int result = (bytes[0] & 255 << 24) +
+        int result = (bytes[0] << 24) +
                 ((bytes[1] & 255) << 16) +
                 ((bytes[2] & 255) << 8) +
                 (bytes[3] & 255);

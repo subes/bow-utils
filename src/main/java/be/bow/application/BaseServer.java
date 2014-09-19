@@ -20,6 +20,8 @@ public abstract class BaseServer extends SafeThread {
     public static final long LONG_END = Long.MAX_VALUE - 2;
     public static final long LONG_NULL = Long.MAX_VALUE - 3;
     public static final double DOUBLE_NULL = Double.MAX_VALUE;
+    public static final int INT_NULL = Integer.MAX_VALUE;
+    public static final float FLOAT_NULL = Float.MAX_VALUE;
 
     private ServerSocket serverSocket;
     private final List<SocketRequestHandler> runningRequestHandlers;
