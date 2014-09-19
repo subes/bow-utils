@@ -13,7 +13,6 @@ import java.util.Arrays;
 
 public class SerializationUtils {
 
-    public static final String NULL_VALUE = "xxnUlLxx";
     private static final String encoding = "UTF-8";
     private final static ObjectMapper prettyPrintObjectMapper = new ObjectMapper();
     private final static ObjectMapper defaultObjectMapper = new ObjectMapper();
@@ -28,47 +27,31 @@ public class SerializationUtils {
     }
 
     public static String objectToString(Object object, boolean prettyPrint) {
-        if (object instanceof Long) {
-            return object.toString();
-        } else if (object instanceof String) {
-            return StringUtils.escapeNewLine((String) object);
-        } else if (object == null) {
-            return NULL_VALUE;
-        } else {
-            try {
-                if (object instanceof Compactable) {
-                    ((Compactable) object).compact();
-                }
-                ObjectMapper objectMapper = prettyPrint ? prettyPrintObjectMapper : defaultObjectMapper;
-                return objectMapper.writeValueAsString(object);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+        try {
+            if (object instanceof Compactable) {
+                ((Compactable) object).compact();
             }
+            ObjectMapper objectMapper = prettyPrint ? prettyPrintObjectMapper : defaultObjectMapper;
+            return objectMapper.writeValueAsString(object);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
     public static <T> T stringToObject(String object, Class<T> objectClass, Class... genericParams) {
-        if (object == null || NULL_VALUE.equals(object)) {
-            return null;
-        } else if (objectClass == Long.class) {
-            return (T) new Long(Long.parseLong(object));
-        } else if (objectClass == String.class) {
-            return (T) StringUtils.unescapeNewLine(object);
-        } else {
-            try {
-                if (genericParams.length > 0) {
-                    JavaType type = defaultObjectMapper.getTypeFactory().constructParametricType(objectClass, genericParams);
-                    return defaultObjectMapper.readValue(object, type);
-                } else {
-                    return defaultObjectMapper.readValue(object, objectClass);
-                }
-            } catch (IOException e) {
-                String objectForMessage = object;
-                if (!StringUtils.isEmpty(objectForMessage) && objectForMessage.length() > 200) {
-                    objectForMessage = objectForMessage.substring(0, 200) + "...";
-                }
-                throw new RuntimeException("Failed to read " + objectForMessage, e);
+        try {
+            if (genericParams.length > 0) {
+                JavaType type = defaultObjectMapper.getTypeFactory().constructParametricType(objectClass, genericParams);
+                return defaultObjectMapper.readValue(object, type);
+            } else {
+                return defaultObjectMapper.readValue(object, objectClass);
             }
+        } catch (IOException e) {
+            String objectForMessage = object;
+            if (!StringUtils.isEmpty(objectForMessage) && objectForMessage.length() > 200) {
+                objectForMessage = objectForMessage.substring(0, 200) + "...";
+            }
+            throw new RuntimeException("Failed to read " + objectForMessage, e);
         }
     }
 
@@ -96,6 +79,14 @@ public class SerializationUtils {
         } else {
             if (objectClass == Long.class) {
                 return (T) new Long(bytesToLong(bytes));
+            } else if (objectClass == Double.class) {
+                return (T) new Double(Double.longBitsToDouble(bytesToLong(bytes)));
+            } else if (objectClass == Integer.class) {
+                return (T) new Integer(bytesToInt(bytes));
+            } else if (objectClass == Float.class) {
+                return (T) new Float(Float.intBitsToFloat(bytesToInt(bytes)));
+            } else if (objectClass == String.class) {
+                return (T) bytesToString(bytes);
             } else {
                 String objectAsString = bytesToString(bytes);
                 return SerializationUtils.stringToObject(objectAsString, objectClass);
@@ -106,6 +97,14 @@ public class SerializationUtils {
     public static <T> byte[] objectToBytes(T value) {
         if (value instanceof Long) {
             return longToBytes((Long) value);
+        } else if (value instanceof Double) {
+            return longToBytes(Double.doubleToLongBits((Double) value));
+        } else if (value instanceof Integer) {
+            return intToBytes((Integer) value);
+        } else if (value instanceof Float) {
+            return intToBytes(Float.floatToIntBits((Float) value));
+        } else if (value instanceof String) {
+            return stringToBytes((String) value);
         } else {
             return stringToBytes(SerializationUtils.objectToString(value));
         }
@@ -140,6 +139,15 @@ public class SerializationUtils {
         return bytes;
     }
 
+    public static byte[] intToBytes(int value) {
+        byte[] bytes = new byte[4];
+        bytes[0] = (byte) (value >>> 24);
+        bytes[1] = (byte) (value >>> 16);
+        bytes[2] = (byte) (value >>> 8);
+        bytes[3] = (byte) (value);
+        return bytes;
+    }
+
     public static long bytesToLong(byte[] bytes) {
         if (bytes.length < 8) {
             bytes = Arrays.copyOf(bytes, 8);
@@ -152,6 +160,17 @@ public class SerializationUtils {
                 ((bytes[5] & 255) << 16) +
                 ((bytes[6] & 255) << 8) +
                 (bytes[7] & 255));
+        return result;
+    }
+
+    public static int bytesToInt(byte[] bytes) {
+        if (bytes.length < 4) {
+            bytes = Arrays.copyOf(bytes, 4);
+        }
+        int result = (bytes[0] & 255 << 24) +
+                ((bytes[1] & 255) << 16) +
+                ((bytes[2] & 255) << 8) +
+                (bytes[3] & 255);
         return result;
     }
 
