@@ -3,15 +3,15 @@ package be.bow.application;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.core.io.support.ResourcePatternResolver;
 
-public abstract class BaseApplicationContextFactory implements RunnableApplicationContextFactory {
+public abstract class BaseApplicationContextFactory<T extends MainClass> implements RunnableApplicationContextFactory {
 
-    private final Class<? extends MainClass> mainClass;
+    private final T mainClass;
     private AnnotationConfigApplicationContext applicationContext;
 
-    protected BaseApplicationContextFactory(Class<? extends MainClass> mainClass) {
+    protected BaseApplicationContextFactory(T mainClass) {
         this.mainClass = mainClass;
         applicationContext = new AnnotationConfigApplicationContext();
-        applicationContext.register(mainClass);
+        singleton("mainClass", mainClass);
     }
 
     protected BaseApplicationContextFactory resourceResolver(ResourcePatternResolver resourcePatternResolver) {
@@ -39,18 +39,18 @@ public abstract class BaseApplicationContextFactory implements RunnableApplicati
         return this;
     }
 
-    public Class<? extends MainClass> getMainClass() {
+    public T getMainClass() {
         return mainClass;
     }
 
     @Override
     public AnnotationConfigApplicationContext createApplicationContext() {
-        applicationContext.getBeanFactory().registerSingleton("applicationContextFactory", this);
+        singleton("applicationContextFactory", this);
         return applicationContext;
     }
 
     @Override
     public String getApplicationName() {
-        return getMainClass().getSimpleName();
+        return getMainClass().getClass().getSimpleName();
     }
 }

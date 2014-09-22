@@ -14,7 +14,8 @@ public class ApplicationManager {
         try {
             applicationContext = applicationContextFactory.createApplicationContext();
             applicationContext.refresh();
-            MainClass instance = applicationContext.getBean(applicationContextFactory.getMainClass());
+            MainClass instance = applicationContextFactory.getMainClass();
+            applicationContext.getAutowireCapableBeanFactory().autowireBean(instance);
             instance.run();
         } catch (Throwable exp) {
             UI.writeError("Received unexpected exception, terminating application.", exp);
