@@ -38,7 +38,7 @@ public class WebContainer implements CloseableComponent {
     @Override
     public void close() {
         routeMatcher.clearRoutes();
-        sparkServerThread.close();
+        sparkServerThread.terminateAndWait();
     }
 
     private void registerControllers() {

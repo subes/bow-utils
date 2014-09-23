@@ -54,4 +54,9 @@ public abstract class SafeThread extends Thread implements CloseableComponent {
     public void waitForFinish() {
         waitForFinish(-1);
     }
+
+    public void terminateAndWait() {
+        close();
+        waitForFinish();
+    }
 }

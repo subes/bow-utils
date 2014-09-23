@@ -36,7 +36,7 @@ public class MemoryManager implements CloseableComponent {
     }
 
     public void close() {
-        cleanupObjectsThread.close();
+        cleanupObjectsThread.terminateAndWait();
     }
 
     /**
@@ -72,7 +72,7 @@ public class MemoryManager implements CloseableComponent {
     private class CleanupObjectsThread extends SafeThread {
 
         private CleanupObjectsThread() {
-            super("CleanObjectsThread", false);
+            super("CleanObjectsThread", true);
         }
 
         public void runInt() {

@@ -1,5 +1,8 @@
 package be.bagofwords.application;
 
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.core.io.support.ResourcePatternResolver;
 
@@ -8,6 +11,7 @@ public abstract class BaseApplicationContextFactory implements ApplicationContex
     private AnnotationConfigApplicationContext applicationContext;
 
     protected BaseApplicationContextFactory() {
+        setSaneDefaultsForLog4J();
         applicationContext = new AnnotationConfigApplicationContext();
     }
 
@@ -39,8 +43,18 @@ public abstract class BaseApplicationContextFactory implements ApplicationContex
     @Override
     public AnnotationConfigApplicationContext createApplicationContext() {
         singleton("applicationContextFactory", this);
+        applicationContext.refresh();
+        applicationContext.registerShutdownHook();
         return applicationContext;
     }
 
+    @Override
+    public String getApplicationName() {
+        return "";
+    }
 
+    private static void setSaneDefaultsForLog4J() {
+        BasicConfigurator.configure();
+        Logger.getRootLogger().setLevel(Level.WARN);
+    }
 }

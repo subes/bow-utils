@@ -31,7 +31,7 @@ public class OpenFilesManager implements CloseableComponent {
 
     @Override
     public void close() {
-        checkOpenFilesThread.close();
+        checkOpenFilesThread.terminateAndWait();
     }
 
     public synchronized void registerOpenFile() {
@@ -53,7 +53,7 @@ public class OpenFilesManager implements CloseableComponent {
     public class CheckOpenFilesThread extends SafeThread {
 
         public CheckOpenFilesThread() {
-            super("CheckOpenFilesThread", false);
+            super("CheckOpenFilesThread", true);
         }
 
         @Override

@@ -6,11 +6,13 @@ import be.bagofwords.util.Utils;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextStoppedEvent;
 
 import java.util.List;
 
 @EagerBowComponent
-public class ApplicationLifeCycle {
+public class ApplicationLifeCycle implements ApplicationListener<ContextStoppedEvent> {
 
     private boolean applicationWasTerminated = false;
 
@@ -44,4 +46,8 @@ public class ApplicationLifeCycle {
         }
     }
 
+    @Override
+    public void onApplicationEvent(ContextStoppedEvent event) {
+        terminateApplication();
+    }
 }
