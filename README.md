@@ -12,6 +12,9 @@ Some utility classes that are used in the count-db project and other bow-* proje
 
 ## Usage
 
+
+```
 git clone https://github.com/koendeschacht/bow-utils.git 
 cd bow-utils
 mvn clean install
+```
