@@ -3,15 +3,12 @@ package be.bagofwords.application;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.core.io.support.ResourcePatternResolver;
 
-public abstract class BaseApplicationContextFactory<T extends MainClass> implements RunnableApplicationContextFactory {
+public abstract class BaseApplicationContextFactory implements ApplicationContextFactory {
 
-    private final T mainClass;
     private AnnotationConfigApplicationContext applicationContext;
 
-    protected BaseApplicationContextFactory(T mainClass) {
-        this.mainClass = mainClass;
+    protected BaseApplicationContextFactory() {
         applicationContext = new AnnotationConfigApplicationContext();
-        singleton("mainClass", mainClass);
     }
 
     protected BaseApplicationContextFactory resourceResolver(ResourcePatternResolver resourcePatternResolver) {
@@ -39,18 +36,11 @@ public abstract class BaseApplicationContextFactory<T extends MainClass> impleme
         return this;
     }
 
-    public T getMainClass() {
-        return mainClass;
-    }
-
     @Override
     public AnnotationConfigApplicationContext createApplicationContext() {
         singleton("applicationContextFactory", this);
         return applicationContext;
     }
 
-    @Override
-    public String getApplicationName() {
-        return getMainClass().getClass().getSimpleName();
-    }
+
 }
