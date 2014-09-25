@@ -3,29 +3,37 @@ package be.bagofwords.util;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Date;
+
 /**
  * Created by Koen Deschacht (koendeschacht@gmail.com) on 9/19/14.
  */
 public class SerializationUtilsTest {
 
-
     @Test
-    public void testToFromBytesPrimitiveValues() {
-        checkConversion(1);
-        checkConversion(Integer.MIN_VALUE);
-        checkConversion(Integer.MAX_VALUE);
-        checkConversion(1l);
-        checkConversion(Long.MAX_VALUE);
-        checkConversion(Long.MIN_VALUE);
-        checkConversion(1f);
-        checkConversion(Float.MAX_VALUE);
-        checkConversion(Float.MIN_VALUE);
-        checkConversion(1d);
-        checkConversion(Double.MAX_VALUE);
-        checkConversion(Double.MIN_VALUE);
+    public void testSimplePrimitiveValues() {
+        checkConversion(1, Integer.class);
+        checkConversion(-1, Integer.class);
+        checkConversion(1l, Long.class);
+        checkConversion(-1l, Long.class);
+        checkConversion(1f, Float.class);
+        checkConversion(-1f, Float.class);
+        checkConversion(1d, Double.class);
+        checkConversion(-1d, Double.class);
     }
 
-    private void checkConversion(Object obj) {
-        Assert.assertEquals(obj, SerializationUtils.bytesToObject(SerializationUtils.objectToBytes(obj), obj.getClass()));
+    @Test
+    public void testNullValues() {
+        checkConversion(null, Long.class);
+        checkConversion(null, Double.class);
+        checkConversion(null, Float.class);
+        checkConversion(null, Integer.class);
+        checkConversion(null, String.class);
+        checkConversion("null", String.class);
+        checkConversion(null, Date.class);
+    }
+
+    private void checkConversion(Object obj, Class objectClass) {
+        Assert.assertEquals(obj, SerializationUtils.bytesToObjectCheckForNull(SerializationUtils.objectToBytesCheckForNull(obj, objectClass), objectClass));
     }
 }

@@ -13,20 +13,26 @@ import java.util.Arrays;
 
 public class SerializationUtils {
 
-    private static final String encoding = "UTF-8";
-    private final static ObjectMapper prettyPrintObjectMapper = new ObjectMapper();
-    private final static ObjectMapper defaultObjectMapper = new ObjectMapper();
+    public static final long LONG_NULL = Long.MAX_VALUE - 3;
+    public static final double DOUBLE_NULL = Double.MAX_VALUE;
+    public static final int INT_NULL = Integer.MAX_VALUE;
+    public static final float FLOAT_NULL = Float.MAX_VALUE;
+    public static final String STRING_NULL = "xyNUlLxy";
+    private static final String ENCODING = "UTF-8";
+
+    private static final ObjectMapper prettyPrintObjectMapper = new ObjectMapper();
+    private static final ObjectMapper defaultObjectMapper = new ObjectMapper();
 
     static {
         prettyPrintObjectMapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
     }
 
 
-    public static String objectToString(Object object) {
-        return objectToString(object, false);
+    public static String serializeObject(Object object) {
+        return serializeObject(object, false);
     }
 
-    public static String objectToString(Object object, boolean prettyPrint) {
+    public static String serializeObject(Object object, boolean prettyPrint) {
         try {
             if (object instanceof Compactable) {
                 ((Compactable) object).compact();
@@ -38,7 +44,7 @@ public class SerializationUtils {
         }
     }
 
-    public static <T> T stringToObject(String object, Class<T> objectClass, Class... genericParams) {
+    public static <T> T deserializeObject(String object, Class<T> objectClass, Class... genericParams) {
         try {
             if (genericParams.length > 0) {
                 JavaType type = defaultObjectMapper.getTypeFactory().constructParametricType(objectClass, genericParams);
@@ -57,7 +63,7 @@ public class SerializationUtils {
 
     public static String bytesToString(byte[] key) {
         try {
-            return new String(key, encoding);
+            return new String(key, ENCODING);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
@@ -65,7 +71,7 @@ public class SerializationUtils {
 
     public static byte[] stringToBytes(String key) {
         try {
-            return key.getBytes(encoding);
+            return key.getBytes(ENCODING);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         } catch (OutOfMemoryError outOfMemoryError) {
@@ -89,30 +95,124 @@ public class SerializationUtils {
                 return (T) bytesToString(bytes);
             } else {
                 String objectAsString = bytesToString(bytes);
-                return SerializationUtils.stringToObject(objectAsString, objectClass);
+                return SerializationUtils.deserializeObject(objectAsString, objectClass);
             }
         }
     }
 
-    public static <T> byte[] objectToBytes(T value) {
-        if (value instanceof Long) {
-            return longToBytes((Long) value);
-        } else if (value instanceof Double) {
-            return longToBytes(Double.doubleToLongBits((Double) value));
-        } else if (value instanceof Integer) {
-            return intToBytes((Integer) value);
-        } else if (value instanceof Float) {
-            return intToBytes(Float.floatToIntBits((Float) value));
-        } else if (value instanceof String) {
-            return stringToBytes((String) value);
+    public static <T> byte[] objectToBytesCheckForNull(T value, Class<T> objectClass) {
+        if (objectClass == Long.class) {
+            if (value == null) {
+                return longToBytes(LONG_NULL);
+            } else if (value.equals(LONG_NULL)) {
+                throw new RuntimeException("Sorry " + value + " is a reserved value to indicate null.");
+            } else {
+                return longToBytes((Long) value);
+            }
+        } else if (objectClass == Double.class) {
+            long valueAsLong;
+            if (value == null) {
+                valueAsLong = Double.doubleToLongBits(DOUBLE_NULL);
+            } else if (value.equals(DOUBLE_NULL)) {
+                throw new RuntimeException("Sorry " + value + " is a reserved value to indicate null");
+            } else {
+                valueAsLong = Double.doubleToLongBits((Double) value);
+            }
+            return longToBytes(valueAsLong);
+        }
+        if (objectClass == Integer.class) {
+            if (value == null) {
+                return intToBytes(INT_NULL);
+            } else if (value.equals(INT_NULL)) {
+                throw new RuntimeException("Sorry " + value + " is a reserved value to indicate null.");
+            } else {
+                return intToBytes((Integer) value);
+            }
+        } else if (objectClass == Float.class) {
+            int valueAsInt;
+            if (value == null) {
+                valueAsInt = Float.floatToIntBits(FLOAT_NULL);
+            } else if (value.equals(FLOAT_NULL)) {
+                throw new RuntimeException("Sorry " + value + " is a reserved value to indicate null");
+            } else {
+                valueAsInt = Float.floatToIntBits((Float) value);
+            }
+            return intToBytes(valueAsInt);
+        } else if (objectClass == String.class) {
+            if (value == null) {
+                return stringToBytes(STRING_NULL);
+            } else if (value.equals(STRING_NULL)) {
+                throw new RuntimeException("Sorry " + value + " is a reserved value to indicate null");
+            } else {
+                return stringToBytes((String) value);
+            }
         } else {
-            return stringToBytes(SerializationUtils.objectToString(value));
+            return stringToBytes(SerializationUtils.serializeObject(value, false));
         }
     }
 
-    public static byte[] objectToCompressedBytes(Object object) {
+    public static <T> T bytesToObjectCheckForNull(byte[] value, Class<T> objectClass) {
+        if (objectClass == Long.class) {
+            long response = bytesToLong(value);
+            if (response != LONG_NULL) {
+                return (T) new Long(response);
+            } else {
+                return null;
+            }
+        } else if (objectClass == Double.class) {
+            double response = Double.longBitsToDouble(bytesToLong(value));
+            if (response != DOUBLE_NULL) {
+                return (T) new Double(response);
+            } else {
+                return null;
+            }
+        } else if (objectClass == Integer.class) {
+            int response = bytesToInt(value);
+            if (response != INT_NULL) {
+                return (T) new Integer(response);
+            } else {
+                return null;
+            }
+        } else if (objectClass == Float.class) {
+            float response = Float.intBitsToFloat(bytesToInt(value));
+            if (response != FLOAT_NULL) {
+                return (T) new Float(response);
+            } else {
+                return null;
+            }
+        } else {
+            String objectAsString = bytesToString(value);
+            if (STRING_NULL.equals(objectAsString)) {
+                return null;
+            } else {
+                if (objectClass == String.class) {
+                    return (T) objectAsString;
+                } else {
+                    return SerializationUtils.deserializeObject(objectAsString, objectClass);
+                }
+            }
+        }
+    }
+
+    public static <T> byte[] objectToBytes(T value, Class<T> objectClass) {
+        if (objectClass == Long.class) {
+            return longToBytes((Long) value);
+        } else if (objectClass == Double.class) {
+            return longToBytes(Double.doubleToLongBits((Double) value));
+        } else if (objectClass == Integer.class) {
+            return intToBytes((Integer) value);
+        } else if (objectClass == Float.class) {
+            return intToBytes(Float.floatToIntBits((Float) value));
+        } else if (objectClass == String.class) {
+            return stringToBytes((String) value);
+        } else {
+            return stringToBytes(SerializationUtils.serializeObject(value));
+        }
+    }
+
+    public static <T> byte[] objectToCompressedBytes(T value, Class<T> objectClass) {
         try {
-            return Snappy.compress(objectToBytes(object));
+            return Snappy.compress(objectToBytes(value, objectClass));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -195,6 +295,16 @@ public class SerializationUtils {
             return defaultObjectMapper.readValue(inputStream, _class);
         } catch (IOException exp) {
             throw new RuntimeException("Failed to read object from inputstream", exp);
+        }
+    }
+
+    public static <T> int getWidth(Class<T> objectClass) {
+        if (objectClass == Long.class || objectClass == Double.class) {
+            return 8;
+        } else if (objectClass == Integer.class || objectClass == Float.class) {
+            return 4;
+        } else {
+            return -1;
         }
     }
 }

@@ -12,7 +12,7 @@ public class UnitTestApplicationContextFactory implements ApplicationContextFact
     public AnnotationConfigApplicationContext createApplicationContext() {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
         context.getBeanFactory().registerSingleton("applicationContextFactory", this);
-        context.scan("be/bow");
+        context.scan("be.bagofwords");
         return context;
     }
 

@@ -137,38 +137,24 @@ public class WrappedSocketConnection implements Closeable {
     }
 
     public <T> T readValue(Class<T> objectClass) throws IOException {
-        if (objectClass == Long.class) {
-            long response = readLong();
-            if (response != BaseServer.LONG_NULL) {
-                return (T) new Long(response);
-            } else {
-                return null;
-            }
-        } else if (objectClass == Double.class) {
-            double response = readDouble();
-            if (response != BaseServer.DOUBLE_NULL) {
-                return (T) new Double(response);
-            } else {
-                return null;
-            }
-        } else if (objectClass == Integer.class) {
-            int response = readInt();
-            if (response != BaseServer.INT_NULL) {
-                return (T) new Integer(response);
-            } else {
-                return null;
-            }
-        } else if (objectClass == Float.class) {
-            float response = readFloat();
-            if (response != BaseServer.FLOAT_NULL) {
-                return (T) new Float(response);
-            } else {
-                return null;
-            }
-        } else {
-            byte[] objectAsBytes = readByteArray();
-            return SerializationUtils.bytesToObject(objectAsBytes, objectClass);
+        int length = SerializationUtils.getWidth(objectClass);
+        if (length < 0) {
+            length = readInt();
         }
+        byte[] value = new byte[length];
+        int numOfBytesRead = is.read(value);
+        while (numOfBytesRead < length) {
+            int extraBytesRead = is.read(value, numOfBytesRead, value.length - numOfBytesRead);
+            if (extraBytesRead == -1) {
+                throw new RuntimeException("Expected to read " + length + " bytes and received " + numOfBytesRead + " bytes");
+            }
+            numOfBytesRead += extraBytesRead;
+        }
+        if (debug) {
+            UI.write("RI <-- " + value.length + " bytes");
+        }
+        T result = SerializationUtils.bytesToObjectCheckForNull(value, objectClass);
+        return result;
     }
 
     public void flush() throws IOException {
@@ -176,42 +162,16 @@ public class WrappedSocketConnection implements Closeable {
     }
 
     public <T> void writeValue(T value, Class<T> objectClass) throws IOException {
-        if (objectClass == Long.class) {
-            if (value == null) {
-                writeLong(BaseServer.LONG_NULL);
-            } else if (value.equals(BaseServer.LONG_NULL)) {
-                throw new RuntimeException("Sorry " + value + " is a reserved value to indicate null.");
-            } else {
-                writeLong((Long) value);
-            }
-        } else if (objectClass == Double.class) {
-            if (value == null) {
-                writeDouble(BaseServer.DOUBLE_NULL);
-            } else if (value.equals(BaseServer.DOUBLE_NULL)) {
-                throw new RuntimeException("Sorry " + value + " is a reserved value to indicate null.");
-            } else {
-                writeDouble((Double) value);
-            }
-        } else if (objectClass == Integer.class) {
-            if (value == null) {
-                writeInt(BaseServer.INT_NULL);
-            } else if (value.equals(BaseServer.INT_NULL)) {
-                throw new RuntimeException("Sorry " + value + " is a reserved value to indicate null.");
-            } else {
-                writeInt((Integer) value);
-            }
-        } else if (objectClass == Float.class) {
-            if (value == null) {
-                writeFloat(BaseServer.FLOAT_NULL);
-            } else if (value.equals(BaseServer.FLOAT_NULL)) {
-                throw new RuntimeException("Sorry " + value + " is a reserved value to indicate null.");
-            } else {
-                writeFloat((Float) value);
-            }
-        } else {
-            byte[] objectAsBytes = SerializationUtils.objectToBytes(value);
-            writeByteArray(objectAsBytes);
+        byte[] objectAsBytes = SerializationUtils.objectToBytesCheckForNull(value, objectClass);
+        int width = SerializationUtils.getWidth(objectClass);
+        if (width == -1) {
+            //not a fixed length object
+            writeInt(objectAsBytes.length);
         }
+        if (debug) {
+            UI.write("RI --> " + objectAsBytes.length + " bytes");
+        }
+        os.write(objectAsBytes);
     }
 
     public byte[] readByteArray() throws IOException {
