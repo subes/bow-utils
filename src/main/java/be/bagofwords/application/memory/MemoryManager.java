@@ -3,7 +3,6 @@ package be.bagofwords.application.memory;
 import be.bagofwords.application.CloseableComponent;
 import be.bagofwords.application.annotations.EagerBowComponent;
 import be.bagofwords.ui.UI;
-import be.bagofwords.util.NumUtils;
 import be.bagofwords.util.SafeThread;
 import be.bagofwords.util.Utils;
 import com.sun.management.GarbageCollectionNotificationInfo;
@@ -12,6 +11,7 @@ import javax.management.Notification;
 import javax.management.NotificationEmitter;
 import javax.management.NotificationListener;
 import javax.management.openmbean.CompositeData;
+import java.io.File;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.MemoryUsage;
 import java.util.ArrayList;
@@ -26,6 +26,7 @@ public class MemoryManager implements CloseableComponent {
     private MemoryStatus memoryStatus;
     private ReentrantLock globalCleanInProgressLock;
     private final CleanupObjectsThread cleanupObjectsThread;
+    private boolean dumpHeapToFileWhenMemoryFull;
 
     public MemoryManager() {
         memoryGobblers = new ArrayList<>();
@@ -33,6 +34,14 @@ public class MemoryManager implements CloseableComponent {
         memoryStatus = MemoryStatus.FREE;
         cleanupObjectsThread = new CleanupObjectsThread();
         cleanupObjectsThread.start();
+    }
+
+    public boolean getDumpHeapToFileWhenMemoryFull() {
+        return dumpHeapToFileWhenMemoryFull;
+    }
+
+    public void setDumpHeapToFileWhenMemoryFull(boolean dumpHeapToFileWhenMemoryFull) {
+        this.dumpHeapToFileWhenMemoryFull = dumpHeapToFileWhenMemoryFull;
     }
 
     public void close() {
@@ -85,6 +94,11 @@ public class MemoryManager implements CloseableComponent {
                     if (memoryStatus == MemoryStatus.LOW || memoryStatus == MemoryStatus.CRITICAL) {
                         globalCleanInProgressLock.lock();
                         //Low on memory, clean caches
+                        if (dumpHeapToFileWhenMemoryFull) {
+                            File dumpFile = new File("heap_" + System.currentTimeMillis() + ".bin");
+                            HeapDumper.dumpHeap(dumpFile.getAbsolutePath(), false);
+                            UI.write("Heap dumped to " + dumpFile.getAbsolutePath());
+                        }
                         List<MemoryGobbler> currCollections;
                         synchronized (memoryGobblers) {
                             currCollections = new ArrayList<>(memoryGobblers);
@@ -126,11 +140,6 @@ public class MemoryManager implements CloseableComponent {
                                 MemoryUsage memoryDetail = entry.getValue();
                                 if ("PS Old Gen".equals(name)) {
                                     memoryStatus = findStatus(memoryDetail.getUsed(), memoryDetail.getMax());
-                                    if (memoryStatus == MemoryStatus.CRITICAL) {
-                                        double overhead = totalGcDuration / (double) info.getGcInfo().getEndTime();
-                                        double used = memoryDetail.getUsed() / (double) memoryDetail.getMax();
-                                        UI.write("[Memory] status=" + memoryStatus + " PS Old Gen used=" + NumUtils.makeNicePercent(used) + " GC cumulated overhead " + NumUtils.makeNicePercent(overhead));
-                                    }
                                 }
                             }
                             totalGcDuration += info.getGcInfo().getDuration();
