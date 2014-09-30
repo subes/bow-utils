@@ -2,8 +2,6 @@ package be.bagofwords.cache;
 
 import be.bagofwords.application.memory.MemoryManager;
 import be.bagofwords.util.HashUtils;
-import be.bagofwords.util.KeyValue;
-import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -21,15 +19,7 @@ public class TestCache {
         final int numOfValues = 1000000;
         MemoryManager freeMemoryManager = new MemoryManager();
         CachesManager cachesManager = new CachesManager(freeMemoryManager);
-        CacheableData<Long> data = new CacheableData<Long>() {
-
-            @Override
-            public void removedValuesFromCache(Cache cache, List<KeyValue<Long>> valuesToRemove) {
-                //OK
-            }
-
-        };
-        Cache<Long> firstCache = cachesManager.createNewCache(data, false, "test", Long.class);
+        Cache<Long> firstCache = cachesManager.createNewCache(false, "test", Long.class);
         Random random = new Random();
         for (int i = 0; i < numOfValues; i++) {
             int cacheInd = random.nextInt();
@@ -38,14 +28,7 @@ public class TestCache {
         }
         Assert.assertTrue(firstCache.size() > 0);
         //Eventually all values should be removed
-        CacheableData<Long> otherData = new CacheableData<Long>() {
-            @Override
-            public void removedValuesFromCache(Cache cache, List<KeyValue<Long>> valuesToRemove) {
-                //ok
-            }
-
-        };
-        Cache otherCache = cachesManager.createNewCache(otherData, false, "test", Long.class);
+        Cache otherCache = cachesManager.createNewCache(false, "test", Long.class);
         long maxTimeToTry = 5 * 60 * 1000; //usually this should take less then 5 minutes
         long start = System.currentTimeMillis();
         while (start + maxTimeToTry >= System.currentTimeMillis() && firstCache.size() > 0) {
@@ -59,26 +42,17 @@ public class TestCache {
     @Test
     public void testUseCommonValues() {
         final int numOfDifferentValues = 20;
-        final MutableBoolean dataWasRemoved = new MutableBoolean(false);
         MemoryManager freeMemoryManager = new MemoryManager();
         CachesManager cachesManager = new CachesManager(freeMemoryManager);
         final Random random = new Random();
-        CacheableData<String> data = new CacheableData<String>() {
-            @Override
-            public void removedValuesFromCache(Cache cache, List<KeyValue<String>> valuesToRemove) {
-                dataWasRemoved.setValue(valuesToRemove.size() > numOfDifferentValues * 10);
-            }
-
-        };
-        Cache<String> cache = cachesManager.createNewCache(data, false, "test", String.class);
-        long maxTimeToTry = 30000; //30s
+        Cache<String> cache = cachesManager.createNewCache(false, "test", String.class);
+        long maxTimeToTry = 30 * 1000; //30s
         long start = System.currentTimeMillis();
-        while (start + maxTimeToTry >= System.currentTimeMillis() && !dataWasRemoved.booleanValue()) {
+        while (start + maxTimeToTry >= System.currentTimeMillis()) {
             long key = random.nextInt();
             String value = Integer.toString(random.nextInt(numOfDifferentValues));
             cache.put(key, value);
         }
-        cache.flush();
         List<String> values = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             long key = i;

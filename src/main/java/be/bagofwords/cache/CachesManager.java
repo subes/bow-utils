@@ -60,8 +60,8 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
         return result;
     }
 
-    public synchronized <T> Cache<T> createNewCache(CacheableData<T> cacheableData, boolean isWriteBuffer, String name, Class<? extends T> objectClass) {
-        Cache newCache = new Cache<T>(cacheableData, isWriteBuffer, name, objectClass);
+    public synchronized <T> Cache<T> createNewCache(boolean isWriteBuffer, String name, Class<? extends T> objectClass) {
+        Cache newCache = new Cache<>(isWriteBuffer, name, objectClass);
         caches.add(newCache);
         return newCache;
     }

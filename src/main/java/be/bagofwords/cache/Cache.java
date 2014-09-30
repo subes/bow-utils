@@ -12,12 +12,10 @@ import java.util.concurrent.Semaphore;
 
 public class Cache<T> {
 
-    private static final int FLUSH_BATCH_SIZE = 1000000;
     private static final int NUMBER_OF_SEGMENTS_EXPONENT = 7;
     private static final int NUMBER_OF_SEGMENTS = 1 << NUMBER_OF_SEGMENTS_EXPONENT;
     private static final int NUMBER_OF_READ_PERMITS = 1000;
 
-    private final CacheableData data;
     private final Semaphore[] locks;
     private final Map<Long, T>[] cachedObjects;
     private final Map<Long, T>[] oldCachedObjects;
@@ -31,8 +29,7 @@ public class Cache<T> {
     private Map<T, T> commonValues;
 
 
-    public Cache(CacheableData<T> data, boolean isWriteBuffer, String name, Class<? extends T> objectClass) {
-        this.data = data;
+    public Cache(boolean isWriteBuffer, String name, Class<? extends T> objectClass) {
         this.objectClass = objectClass;
         this.cachedObjects = new Map[NUMBER_OF_SEGMENTS];
         createMaps(cachedObjects);
@@ -94,26 +91,16 @@ public class Cache<T> {
         unlockWrite(segmentInd);
     }
 
-    public void flush() {
-        final List<KeyValue> valuesToRemove = new ArrayList<>();
+    public List<KeyValue<T>> removeAllValues() {
+        final List<KeyValue<T>> valuesToRemove = new ArrayList<>();
         doActionOnValues(new ValueAction() {
             @Override
             public void doAction(long key, Object value) {
                 valuesToRemove.add(new KeyValue(key, value));
-                if (valuesToRemove.size() > FLUSH_BATCH_SIZE) {
-                    getData().removedValuesFromCache(Cache.this, valuesToRemove);
-                    valuesToRemove.clear();
-                }
             }
         });
         clear(); //also clear old cached objects
-        if (!valuesToRemove.isEmpty()) {
-            getData().removedValuesFromCache(this, valuesToRemove);
-        }
-    }
-
-    public CacheableData getData() {
-        return data;
+        return valuesToRemove;
     }
 
     public void clear() {
