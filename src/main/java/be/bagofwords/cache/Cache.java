@@ -24,8 +24,8 @@ public class Cache<T> {
     private final T nullValue;
     private final String name;
 
-    private int numHits;
-    private int numOfFetches;
+    private long numHits;
+    private long numOfFetches;
     private Map<T, T> commonValues;
 
 
@@ -147,11 +147,11 @@ public class Cache<T> {
         return name;
     }
 
-    public int getNumberOfHits() {
+    public long getNumberOfHits() {
         return numHits;
     }
 
-    public int getNumberOfFetches() {
+    public long getNumberOfFetches() {
         return numOfFetches;
     }
 
