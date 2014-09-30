@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
 
 public class SerializationUtils {
 
@@ -62,8 +61,12 @@ public class SerializationUtils {
     }
 
     public static String bytesToString(byte[] key) {
+        return bytesToString(key, 0, key.length);
+    }
+
+    public static String bytesToString(byte[] key, int offset, int length) {
         try {
-            return new String(key, ENCODING);
+            return new String(key, offset, length, ENCODING);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
@@ -152,36 +155,40 @@ public class SerializationUtils {
     }
 
     public static <T> T bytesToObjectCheckForNull(byte[] value, Class<T> objectClass) {
+        return bytesToObjectCheckForNull(value, 0, value.length, objectClass);
+    }
+
+    public static <T> T bytesToObjectCheckForNull(byte[] value, int offset, int length, Class<T> objectClass) {
         if (objectClass == Long.class) {
-            long response = bytesToLong(value);
+            long response = bytesToLong(value, offset);
             if (response != LONG_NULL) {
                 return (T) new Long(response);
             } else {
                 return null;
             }
         } else if (objectClass == Double.class) {
-            double response = Double.longBitsToDouble(bytesToLong(value));
+            double response = Double.longBitsToDouble(bytesToLong(value, offset));
             if (response != DOUBLE_NULL) {
                 return (T) new Double(response);
             } else {
                 return null;
             }
         } else if (objectClass == Integer.class) {
-            int response = bytesToInt(value);
+            int response = bytesToInt(value, offset);
             if (response != INT_NULL) {
                 return (T) new Integer(response);
             } else {
                 return null;
             }
         } else if (objectClass == Float.class) {
-            float response = Float.intBitsToFloat(bytesToInt(value));
+            float response = Float.intBitsToFloat(bytesToInt(value, offset));
             if (response != FLOAT_NULL) {
                 return (T) new Float(response);
             } else {
                 return null;
             }
         } else {
-            String objectAsString = bytesToString(value);
+            String objectAsString = bytesToString(value, offset, length);
             if (STRING_NULL.equals(objectAsString)) {
                 return null;
             } else {
@@ -240,17 +247,18 @@ public class SerializationUtils {
     }
 
     public static long bytesToLong(byte[] bytes) {
-        if (bytes.length < 8) {
-            bytes = Arrays.copyOf(bytes, 8);
-        }
-        long result = (((long) bytes[0] << 56) +
-                ((long) (bytes[1] & 255) << 48) +
-                ((long) (bytes[2] & 255) << 40) +
-                ((long) (bytes[3] & 255) << 32) +
-                ((long) (bytes[4] & 255) << 24) +
-                ((bytes[5] & 255) << 16) +
-                ((bytes[6] & 255) << 8) +
-                (bytes[7] & 255));
+        return bytesToLong(bytes, 0);
+    }
+
+    public static long bytesToLong(byte[] bytes, int offset) {
+        long result = (((long) bytes[offset] << 56) +
+                ((long) (bytes[offset + 1] & 255) << 48) +
+                ((long) (bytes[offset + 2] & 255) << 40) +
+                ((long) (bytes[offset + 3] & 255) << 32) +
+                ((long) (bytes[offset + 4] & 255) << 24) +
+                ((bytes[offset + 5] & 255) << 16) +
+                ((bytes[offset + 6] & 255) << 8) +
+                (bytes[offset + 7] & 255));
         return result;
     }
 
@@ -264,10 +272,14 @@ public class SerializationUtils {
     }
 
     public static int bytesToInt(byte[] bytes) {
-        int result = (bytes[0] << 24) +
-                ((bytes[1] & 255) << 16) +
-                ((bytes[2] & 255) << 8) +
-                (bytes[3] & 255);
+        return bytesToInt(bytes, 0);
+    }
+
+    public static int bytesToInt(byte[] bytes, int offset) {
+        int result = (bytes[offset] << 24) +
+                ((bytes[offset + 1] & 255) << 16) +
+                ((bytes[offset + 2] & 255) << 8) +
+                (bytes[offset + 3] & 255);
         return result;
     }
 
