@@ -235,6 +235,19 @@ public abstract class UI {
         }
     }
 
+    public static long readLong(String msg) {
+        while (true) {
+            getInstance().writeLn(NORMAL, msg);
+            String input = getInstance().readInputLine();
+            try {
+                long result = Long.parseLong(input);
+                return result;
+            } catch (Exception exp) {
+                getInstance().writeLn(NORMAL, "Please enter a valid integer");
+            }
+        }
+    }   
+
     public static double readDouble(String msg) {
         while (true) {
             getInstance().writeLn(NORMAL, msg);

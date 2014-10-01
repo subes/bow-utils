@@ -12,8 +12,9 @@ import java.util.concurrent.Semaphore;
 
 public class Cache<T> {
 
-    private static final int NUMBER_OF_SEGMENTS_EXPONENT = 7;
+    private static final int NUMBER_OF_SEGMENTS_EXPONENT = 8;
     private static final int NUMBER_OF_SEGMENTS = 1 << NUMBER_OF_SEGMENTS_EXPONENT;
+    private static final long SEGMENTS_KEY_MASK = NUMBER_OF_SEGMENTS - 1;
     private static final int NUMBER_OF_READ_PERMITS = 1000;
 
     private final Semaphore[] locks;
@@ -240,7 +241,7 @@ public class Cache<T> {
     }
 
     private int getSegmentInd(long key) {
-        return (int) ((key >> (64 - NUMBER_OF_SEGMENTS_EXPONENT)) + NUMBER_OF_SEGMENTS / 2);
+        return (int) (key & SEGMENTS_KEY_MASK);
     }
 
     private T makeSharedValueIfPossible(T value) {
