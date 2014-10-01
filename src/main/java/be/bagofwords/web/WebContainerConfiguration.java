@@ -12,7 +12,7 @@ public class WebContainerConfiguration {
     @Bean
     @Autowired
     public WebContainer createWebContainer(MainClass mainClass) {
-        long hashCode = HashUtils.hashCode(mainClass.getClass().getName());
+        long hashCode = HashUtils.hashCode(mainClass.getClass().getSimpleName());
         if (hashCode < 0) {
             hashCode = -hashCode;
         }
