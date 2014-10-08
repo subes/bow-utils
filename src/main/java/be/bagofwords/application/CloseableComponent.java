@@ -1,8 +1,8 @@
 package be.bagofwords.application;
 
 
-import java.io.Closeable;
+public interface CloseableComponent {
 
-public interface CloseableComponent extends Closeable {
+    public void terminate();
 
 }

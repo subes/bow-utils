@@ -26,7 +26,6 @@ public class SerializationUtils {
         prettyPrintObjectMapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
     }
 
-
     public static String serializeObject(Object object) {
         return serializeObject(object, false);
     }
@@ -141,16 +140,17 @@ public class SerializationUtils {
                 valueAsInt = Float.floatToIntBits((Float) value);
             }
             return intToBytes(valueAsInt);
-        } else if (objectClass == String.class) {
+        } else {
             if (value == null) {
                 return stringToBytes(STRING_NULL);
             } else if (value.equals(STRING_NULL)) {
                 throw new RuntimeException("Sorry " + value + " is a reserved value to indicate null");
-            } else {
-                return stringToBytes((String) value);
             }
-        } else {
-            return stringToBytes(SerializationUtils.serializeObject(value, false));
+            if (objectClass == String.class) {
+                return stringToBytes((String) value);
+            } else {
+                return stringToBytes(SerializationUtils.serializeObject(value, false));
+            }
         }
     }
 

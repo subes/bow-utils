@@ -36,7 +36,7 @@ public class TestCache {
             otherCache.put(key, key);
         }
         Assert.assertEquals(0, firstCache.size());
-        freeMemoryManager.close();
+        freeMemoryManager.terminate();
     }
 
     @Test
@@ -72,7 +72,7 @@ public class TestCache {
                 Assert.assertTrue(identicalObj);
             }
         }
-        freeMemoryManager.close();
+        freeMemoryManager.terminate();
     }
 
 }

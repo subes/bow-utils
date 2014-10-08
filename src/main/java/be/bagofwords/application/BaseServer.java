@@ -3,6 +3,7 @@ package be.bagofwords.application;
 
 import be.bagofwords.ui.UI;
 import be.bagofwords.util.SafeThread;
+import be.bagofwords.util.Utils;
 import be.bagofwords.util.WrappedSocketConnection;
 import org.apache.commons.io.IOUtils;
 
@@ -31,7 +32,6 @@ public abstract class BaseServer extends SafeThread {
         this.totalNumberOfConnections = 0;
         try {
             this.serverSocket = new ServerSocket(scpPort);
-            UI.write("Started server " + getName() + " on port " + scpPort);
         } catch (IOException exp) {
             throw new RuntimeException("Failed to initialize server " + getName() + " on port " + scpPort, exp);
         }
@@ -41,6 +41,7 @@ public abstract class BaseServer extends SafeThread {
 
     @Override
     protected void runInt() throws Exception {
+        UI.write("Started server " + getName() + " on port " + scpPort);
         while (!serverSocket.isClosed() && !isTerminateRequested()) {
             try {
                 WrappedSocketConnection connection = new WrappedSocketConnection(serverSocket.accept());
@@ -62,10 +63,16 @@ public abstract class BaseServer extends SafeThread {
 
     @Override
     public void doTerminate() {
-        synchronized (runningRequestHandlers) {
-            for (SocketRequestHandler requestHandler : runningRequestHandlers) {
-                requestHandler.close();
+        //once a request handler is finished, it removes itself from the list of requestHandlers, so we just wait until this list is empty
+        while (!runningRequestHandlers.isEmpty()) {
+            synchronized (runningRequestHandlers) {
+                for (SocketRequestHandler requestHandler : runningRequestHandlers) {
+                    if (!requestHandler.isTerminateRequested()) {
+                        requestHandler.requestTermination();
+                    }
+                }
             }
+            Utils.threadSleep(10);
         }
         if (serverSocket != null) {
             try {

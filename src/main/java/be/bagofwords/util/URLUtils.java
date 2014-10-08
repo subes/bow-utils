@@ -54,7 +54,19 @@ public class URLUtils {
         return url.substring(0, end);
     }
 
-    static final Pattern linkP = Pattern.compile("(?<=a href=)[^>\n ]+");
+    public static String getPath(String url) {
+        url = removeProtocol(url);
+        int end = 0;
+        while (end < url.length() && url.charAt(end) != '/' && url.charAt(end) != '?')
+            end++;
+        if (end < url.length()) {
+            return url.substring(end);
+        } else {
+            return "/"; //default path
+        }
+    }
+
+    static final Pattern linkP = Pattern.compile("(?<=href=)[^>\n ]+");
 
     public static ArrayList<String> findLinks(CharSequence html, String context) {
         Matcher m = linkP.matcher(html);

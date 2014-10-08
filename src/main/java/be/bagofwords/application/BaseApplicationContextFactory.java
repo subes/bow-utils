@@ -6,13 +6,18 @@ import org.apache.log4j.Logger;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.core.io.support.ResourcePatternResolver;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public abstract class BaseApplicationContextFactory implements ApplicationContextFactory {
 
     private AnnotationConfigApplicationContext applicationContext;
+    private List<Object> singletons;
 
     protected BaseApplicationContextFactory() {
         setSaneDefaultsForLog4J();
         applicationContext = new AnnotationConfigApplicationContext();
+        singletons = new ArrayList<>();
     }
 
     protected BaseApplicationContextFactory resourceResolver(ResourcePatternResolver resourcePatternResolver) {
@@ -25,8 +30,9 @@ public abstract class BaseApplicationContextFactory implements ApplicationContex
         return this;
     }
 
-    protected BaseApplicationContextFactory singleton(String name, Object object) {
+    protected synchronized BaseApplicationContextFactory singleton(String name, Object object) {
         applicationContext.getBeanFactory().registerSingleton(name, object);
+        singletons.add(object);
         return this;
     }
 
@@ -45,7 +51,18 @@ public abstract class BaseApplicationContextFactory implements ApplicationContex
         singleton("applicationContextFactory", this);
         applicationContext.refresh();
         applicationContext.registerShutdownHook();
+        wireSingletons();
         return applicationContext;
+    }
+
+    /**
+     * Ugly method, seems we are doing springs job here...
+     */
+
+    private void wireSingletons() {
+        for (Object singleton : singletons) {
+            applicationContext.getAutowireCapableBeanFactory().autowireBean(singleton);
+        }
     }
 
     @Override

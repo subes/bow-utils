@@ -30,8 +30,8 @@ public class OpenFilesManager implements CloseableComponent {
     }
 
     @Override
-    public void close() {
-        checkOpenFilesThread.terminateAndWait();
+    public void terminate() {
+        checkOpenFilesThread.terminate();
     }
 
     public synchronized void registerOpenFile() {

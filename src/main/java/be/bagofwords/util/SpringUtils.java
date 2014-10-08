@@ -11,7 +11,7 @@ public class SpringUtils {
 
     public static <T> List<? extends T> getInstantiatedBeans(ApplicationContext applicationContext, Class<T> _class) {
         List<? extends T> singletons = new ArrayList<>();
-        String[] all = applicationContext.getBeanDefinitionNames();
+        String[] all = applicationContext.getBeanNamesForType(_class,false, false);
         ConfigurableListableBeanFactory clbf = ((AbstractApplicationContext) applicationContext).getBeanFactory();
         for (String name : all) {
             Object s = clbf.getSingleton(name);

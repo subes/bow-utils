@@ -25,15 +25,15 @@ public class MemoryManager implements CloseableComponent {
     private final List<MemoryGobbler> memoryGobblers;
     private MemoryStatus memoryStatus;
     private ReentrantLock globalCleanInProgressLock;
-    private final CleanupObjectsThread cleanupObjectsThread;
+    private final FreeMemoryThread freeMemoryThread;
     private boolean dumpHeapToFileWhenMemoryFull;
 
     public MemoryManager() {
         memoryGobblers = new ArrayList<>();
         globalCleanInProgressLock = new ReentrantLock();
         memoryStatus = MemoryStatus.FREE;
-        cleanupObjectsThread = new CleanupObjectsThread();
-        cleanupObjectsThread.start();
+        freeMemoryThread = new FreeMemoryThread();
+        freeMemoryThread.start();
     }
 
     public boolean getDumpHeapToFileWhenMemoryFull() {
@@ -44,8 +44,9 @@ public class MemoryManager implements CloseableComponent {
         this.dumpHeapToFileWhenMemoryFull = dumpHeapToFileWhenMemoryFull;
     }
 
-    public void close() {
-        cleanupObjectsThread.terminateAndWait();
+    @Override
+    public void terminate() {
+        freeMemoryThread.terminate();
     }
 
     /**
@@ -78,10 +79,10 @@ public class MemoryManager implements CloseableComponent {
         return memoryStatus;
     }
 
-    private class CleanupObjectsThread extends SafeThread {
+    private class FreeMemoryThread extends SafeThread {
 
-        private CleanupObjectsThread() {
-            super("CleanObjectsThread", true);
+        private FreeMemoryThread() {
+            super("FreeMemoryThread", true);
         }
 
         public void runInt() {
@@ -102,6 +103,12 @@ public class MemoryManager implements CloseableComponent {
                         List<MemoryGobbler> currCollections;
                         synchronized (memoryGobblers) {
                             currCollections = new ArrayList<>(memoryGobblers);
+                        }
+                        if (memoryStatus == MemoryStatus.CRITICAL) {
+                            UI.write("[Memory] Memory critical! Printing usage:");
+                            for (MemoryGobbler memoryGobbler : memoryGobblers) {
+                                UI.write("[Memory] " + memoryGobbler.getClass().getSimpleName() + " " + memoryGobbler.getMemoryUsage());
+                            }
                         }
                         for (MemoryGobbler collection : currCollections) {
                             collection.freeMemory();

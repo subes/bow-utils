@@ -5,7 +5,6 @@ import be.bagofwords.application.annotations.BowComponent;
 import be.bagofwords.application.memory.MemoryGobbler;
 import be.bagofwords.application.memory.MemoryManager;
 import be.bagofwords.application.status.StatusViewable;
-import be.bagofwords.ui.UI;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
@@ -28,15 +27,16 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
 
     @Override
     public void freeMemory() {
-        long oldSizeRead = sizeOfAllReadCaches();
         for (Cache cache : caches) {
             if (!cache.isWriteBuffer()) {
                 cache.moveCachedObjectsToOld();
             }
         }
-        long newSizeRead = sizeOfAllReadCaches();
-        long sizeWrite = sizeOfAllWriteBuffers();
-        UI.write("[Memory] Reduced size of caches read=" + oldSizeRead + "-->" + newSizeRead + ", write=" + sizeWrite);
+    }
+
+    @Override
+    public String getMemoryUsage() {
+        return "caches read=" + sizeOfAllReadCaches() + " write=" + sizeOfAllWriteBuffers();
     }
 
     private long sizeOfAllReadCaches() {
@@ -89,7 +89,7 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
     }
 
     @Override
-    public synchronized void close() {
+    public synchronized void terminate() {
         //do nothing
     }
 

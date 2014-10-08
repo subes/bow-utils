@@ -3,16 +3,15 @@ package be.bagofwords.application;
 import be.bagofwords.application.annotations.EagerBowComponent;
 import be.bagofwords.util.SpringUtils;
 import be.bagofwords.util.Utils;
-import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ContextStoppedEvent;
+import org.springframework.context.event.ContextClosedEvent;
 
 import java.util.List;
 
 @EagerBowComponent
-public class ApplicationLifeCycle implements ApplicationListener<ContextStoppedEvent> {
+public class ApplicationLifeCycle implements ApplicationListener<ContextClosedEvent> {
 
     private boolean applicationWasTerminated = false;
 
@@ -27,12 +26,12 @@ public class ApplicationLifeCycle implements ApplicationListener<ContextStoppedE
             List<? extends CloseableComponent> terminatableBeans = SpringUtils.getInstantiatedBeans(applicationContext, CloseableComponent.class);
             for (CloseableComponent object : terminatableBeans) {
                 if (!(object instanceof LateCloseableComponent)) {
-                    IOUtils.closeQuietly(object);
+                    object.terminate();
                 }
             }
             for (CloseableComponent object : terminatableBeans) {
                 if (object instanceof LateCloseableComponent) {
-                    IOUtils.closeQuietly(object);
+                    object.terminate();
                 }
             }
             applicationWasTerminated = true;
@@ -46,8 +45,12 @@ public class ApplicationLifeCycle implements ApplicationListener<ContextStoppedE
         }
     }
 
+    public boolean applicationWasTerminated() {
+        return applicationWasTerminated;
+    }
+
     @Override
-    public void onApplicationEvent(ContextStoppedEvent event) {
+    public void onApplicationEvent(ContextClosedEvent event) {
         terminateApplication();
     }
 }

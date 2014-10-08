@@ -1,20 +1,22 @@
 package be.bagofwords.web;
 
 import be.bagofwords.application.CloseableComponent;
+import be.bagofwords.application.EnvironmentProperties;
 import be.bagofwords.ui.UI;
 import be.bagofwords.util.SafeThread;
 import be.bagofwords.util.SpringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextStartedEvent;
 import spark.route.RouteMatcher;
 import spark.route.RouteMatcherFactory;
 import spark.webserver.SparkServer;
 import spark.webserver.SparkServerFactory;
 
-import javax.annotation.PostConstruct;
 import java.util.List;
 
-public class WebContainer implements CloseableComponent {
+public class WebContainer implements CloseableComponent, ApplicationListener<ContextStartedEvent> {
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -28,17 +30,17 @@ public class WebContainer implements CloseableComponent {
         this.port = port;
     }
 
-    @PostConstruct
-    public void initialize() {
+    @Override
+    public void onApplicationEvent(ContextStartedEvent contextStartedEvent) {
         registerControllers();
         sparkServerThread = new SparkServerThread(port);
         sparkServerThread.start();
     }
 
     @Override
-    public void close() {
+    public void terminate() {
         routeMatcher.clearRoutes();
-        sparkServerThread.terminateAndWait();
+        sparkServerThread.terminate();
     }
 
     private void registerControllers() {

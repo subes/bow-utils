@@ -50,7 +50,7 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
      */
 
     public ThreadSampleMonitor(boolean saveThreadSamplesToFile, String locationForSavedThreadSamples, String applicationName) {
-        super("perf");
+        super("/perf");
         this.saveThreadSamplesToFile = saveThreadSamplesToFile;
         this.locationForSavedThreadSamples = locationForSavedThreadSamples;
         this.applicationName = applicationName;
@@ -78,8 +78,8 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
     }
 
     @Override
-    public void close() {
-        traceSampler.terminateAndWait();
+    public void terminate() {
+        traceSampler.terminate();
         if (saveThreadSamplesToFile) {
             saveThreadSamplesToFile();
         }
@@ -89,7 +89,7 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
         try {
             synchronized (relevantTracesCounter) {
                 synchronized (lessRelevantTracesCounter) {
-                    File file = new File(locationForSavedThreadSamples + "_" + applicationName + "_" + System.currentTimeMillis() / (60 * 60 * 1000) + ".txt");
+                    File file = new File(locationForSavedThreadSamples + "_" + applicationName + ".txt");
                     StringBuilder sb = new StringBuilder();
                     sb.append("Traces for " + applicationName + " on " + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm") + "\n\n");
                     sb.append("-- Relevant traces --\n\n");

@@ -6,4 +6,6 @@ public interface EnvironmentProperties {
 
     public String getThreadSampleLocation();
 
+    public String getApplicationUrlRoot();
+
 }
