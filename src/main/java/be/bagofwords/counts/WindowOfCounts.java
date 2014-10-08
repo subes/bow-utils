@@ -17,6 +17,10 @@ public class WindowOfCounts {
     }
 
     public void addCount() {
+        addCount(1l);
+    }
+
+    public void addCount(long count) {
         if (System.currentTimeMillis() - startOfCurrWindow > windowSize) {
             synchronized (this) {
                 if (System.currentTimeMillis() - startOfCurrWindow > windowSize) {
@@ -27,8 +31,8 @@ public class WindowOfCounts {
                 }
             }
         }
-        countsInCurrWindow++;
-        totalCounts++;
+        countsInCurrWindow += count;
+        totalCounts += count;
     }
 
     public double getMsPerCount() {
