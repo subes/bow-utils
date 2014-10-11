@@ -1,5 +1,6 @@
 package be.bagofwords.util;
 
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -129,5 +130,15 @@ public class URLUtils {
 
     public static boolean isPossibleUrl2(String input) {
         return input.toLowerCase().matches("http://(\\w+\\.)+\\w{2,3}[^ ]*");
+    }
+
+    public static String getHostName() {
+        String hostname;
+        try {
+            hostname = java.net.InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            throw new RuntimeException("Failed to find localhost name!", e);
+        }
+        return hostname;
     }
 }
