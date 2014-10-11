@@ -48,7 +48,7 @@ public class Cache<T> {
         this.name = name;
     }
 
-    public T get(long key) {
+    public KeyValue<T> get(long key) {
         incrementFetches();
         int segmentInd = getSegmentInd(key);
         lockRead(segmentInd);
@@ -64,16 +64,16 @@ public class Cache<T> {
                 oldCachedObjects[segmentInd].remove(key);
                 unlockWrite(segmentInd);
             } else {
-                return null;
+                return null; //not in cache
             }
         } else {
             unlockRead(segmentInd);
         }
         incrementHits();
         if (result.equals(nullValue)) {
-            return null;
+            return new KeyValue<>(key, null);
         } else {
-            return result;
+            return new KeyValue<>(key, result);
         }
     }
 

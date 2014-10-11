@@ -58,7 +58,7 @@ public class TestCache {
             long key = i;
             String value = Integer.toString(i * numOfDifferentValues / 100);
             cache.put(key, value);
-            String cachedValue = cache.get(key);
+            String cachedValue = cache.get(key).getValue();
             Assert.assertEquals(value, cachedValue);
             if (!values.contains(cachedValue)) {
                 values.add(cachedValue);
