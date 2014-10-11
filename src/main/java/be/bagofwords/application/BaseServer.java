@@ -68,7 +68,7 @@ public abstract class BaseServer extends SafeThread {
             synchronized (runningRequestHandlers) {
                 for (SocketRequestHandler requestHandler : runningRequestHandlers) {
                     if (!requestHandler.isTerminateRequested()) {
-                        requestHandler.requestTermination();
+                        requestHandler.terminateAndWaitForFinish();
                     }
                 }
             }

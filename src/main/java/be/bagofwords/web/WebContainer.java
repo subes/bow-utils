@@ -40,7 +40,7 @@ public class WebContainer implements CloseableComponent, ApplicationListener<Con
     @Override
     public void terminate() {
         routeMatcher.clearRoutes();
-        sparkServerThread.terminate();
+        sparkServerThread.terminateAndWaitForFinish();
     }
 
     private void registerControllers() {

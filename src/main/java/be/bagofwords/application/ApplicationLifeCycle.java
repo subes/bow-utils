@@ -1,6 +1,7 @@
 package be.bagofwords.application;
 
 import be.bagofwords.application.annotations.EagerBowComponent;
+import be.bagofwords.util.SafeThread;
 import be.bagofwords.util.SpringUtils;
 import be.bagofwords.util.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,8 +31,18 @@ public class ApplicationLifeCycle implements ApplicationListener<ContextClosedEv
                 }
             }
             for (CloseableComponent object : terminatableBeans) {
+                if (!(object instanceof LateCloseableComponent) && object instanceof SafeThread) {
+                    ((SafeThread) object).waitForFinish();
+                }
+            }
+            for (CloseableComponent object : terminatableBeans) {
                 if (object instanceof LateCloseableComponent) {
                     object.terminate();
+                }
+            }
+            for (CloseableComponent object : terminatableBeans) {
+                if (object instanceof LateCloseableComponent && object instanceof SafeThread) {
+                    ((SafeThread) object).waitForFinish();
                 }
             }
             applicationWasTerminated = true;

@@ -46,7 +46,7 @@ public class MemoryManager implements CloseableComponent {
 
     @Override
     public void terminate() {
-        freeMemoryThread.terminate();
+        freeMemoryThread.terminateAndWaitForFinish();
     }
 
     /**

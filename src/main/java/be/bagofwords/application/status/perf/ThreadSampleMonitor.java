@@ -79,7 +79,7 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
 
     @Override
     public void terminate() {
-        traceSampler.terminate();
+        traceSampler.terminateAndWaitForFinish();
         if (saveThreadSamplesToFile) {
             saveThreadSamplesToFile();
         }

@@ -25,7 +25,8 @@ public abstract class SafeThread extends Thread implements CloseableComponent {
         }
     }
 
-    public void requestTermination() {
+    @Override
+    public void terminate() {
         terminateRequested = true;
         doTerminate();
     }
@@ -55,9 +56,8 @@ public abstract class SafeThread extends Thread implements CloseableComponent {
         waitForFinish(-1);
     }
 
-    @Override
-    public void terminate() {
-        requestTermination();
+    public void terminateAndWaitForFinish() {
+        terminate();
         waitForFinish();
     }
 }

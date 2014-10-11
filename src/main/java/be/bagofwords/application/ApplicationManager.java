@@ -19,7 +19,7 @@ public class ApplicationManager {
                 applicationContext.close();
             }
         }
-        UI.write("Application was terminated. Goodbye!");
+        UI.write("Application has terminated. Goodbye!");
     }
 
 }

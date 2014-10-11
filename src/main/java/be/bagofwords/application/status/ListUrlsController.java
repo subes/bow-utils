@@ -51,6 +51,6 @@ public class ListUrlsController extends BaseController implements CloseableCompo
 
     @Override
     public void terminate() {
-        registerUrlsServer.requestTermination();
+        registerUrlsServer.terminateAndWaitForFinish();
     }
 }

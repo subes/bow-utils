@@ -30,7 +30,7 @@ public class ThreadStatusViewable implements StatusViewable {
                 }
             }
         });
-        sb.append("<h1>Print threads</h1>");
+        sb.append("<h1>Threads</h1>");
         int numOfJettyThreads = 0;
         for (Thread thread : sortedThreads) {
             if (!thread.getName().contains("qtp")) {
