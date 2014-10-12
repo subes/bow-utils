@@ -63,23 +63,17 @@ public abstract class BaseServer extends SafeThread {
 
     @Override
     public void doTerminate() {
+        IOUtils.closeQuietly(serverSocket);
         //once a request handler is finished, it removes itself from the list of requestHandlers, so we just wait until this list is empty
         while (!runningRequestHandlers.isEmpty()) {
             synchronized (runningRequestHandlers) {
                 for (SocketRequestHandler requestHandler : runningRequestHandlers) {
                     if (!requestHandler.isTerminateRequested()) {
-                        requestHandler.terminateAndWaitForFinish();
+                        requestHandler.terminate(); //we can not call terminateAndWaitForFinish() here since to finish the request handler needs access to the runningRequestHandlers list
                     }
                 }
             }
             Utils.threadSleep(10);
-        }
-        if (serverSocket != null) {
-            try {
-                serverSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
         UI.write("Server " + getName() + " has been terminated.");
     }
