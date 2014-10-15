@@ -42,7 +42,10 @@ public class ListUrlsController extends BaseController implements CloseableCompo
 
     public void registerUrl(String name, String url) {
         synchronized (urls) {
-            urls.add(0, new Pair<>(name, url));
+            Pair<String, String> toRegister = new Pair<>(name, url);
+            if (!urls.contains(toRegister)) {
+                urls.add(0, toRegister);
+            }
             while (urls.size() > 20) {
                 urls.remove(urls.get(urls.size() - 1));
             }

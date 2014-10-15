@@ -1,8 +1,8 @@
 package be.bagofwords.web;
 
 import be.bagofwords.application.CloseableComponent;
-import be.bagofwords.application.EnvironmentProperties;
 import be.bagofwords.ui.UI;
+import be.bagofwords.util.HashUtils;
 import be.bagofwords.util.SafeThread;
 import be.bagofwords.util.SpringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +26,19 @@ public class WebContainer implements CloseableComponent, ApplicationListener<Con
     private int port;
 
     public WebContainer(int port) {
+        initialize(port);
+    }
+
+    public WebContainer(String applicationName) {
+        long hashCode = HashUtils.hashCode(applicationName);
+        if (hashCode < 0) {
+            hashCode = -hashCode;
+        }
+        int randomPort = (int) (1023 + (hashCode % (65535 - 1023)));
+        initialize(randomPort);
+    }
+
+    private void initialize(int port) {
         this.routeMatcher = RouteMatcherFactory.get();
         this.port = port;
     }
