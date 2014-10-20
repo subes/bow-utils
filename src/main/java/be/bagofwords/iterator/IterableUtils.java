@@ -1,5 +1,8 @@
 package be.bagofwords.iterator;
 
+import be.bagofwords.util.KeyValue;
+
+import java.lang.reflect.Array;
 import java.util.*;
 
 public class IterableUtils {
@@ -182,5 +185,71 @@ public class IterableUtils {
     public static enum CombineMethod {
         SEQUENTIAL, INTERLEAVED
     }
+
+    public static <T> DataIterable<KeyValue<T[]>> createGroupingIterable(final Class<T> objectClass, final List<DataIterable<KeyValue<T>>> iterables) {
+        final List<CloseableIterator<KeyValue<T>>> iterators = new ArrayList<>();
+        for (DataIterable<KeyValue<T>> iterable : iterables) {
+            iterators.add(iterable.iterator());
+        }
+
+        return new DataIterable<KeyValue<T[]>>() {
+            @Override
+            public CloseableIterator<KeyValue<T[]>> iterator() {
+                return new CloseableIterator<KeyValue<T[]>>() {
+
+                    private KeyValue<T>[] storedValues = new KeyValue[iterators.size()];
+
+                    @Override
+                    protected void closeInt() {
+                        for (CloseableIterator<KeyValue<T>> iterator : iterators) {
+                            iterator.close();
+                        }
+                    }
+
+                    @Override
+                    public boolean hasNext() {
+                        for (int i = 0; i < iterators.size(); i++) {
+                            if (iterators.get(i).hasNext() || storedValues[i] != null) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+
+                    @Override
+                    public KeyValue<T[]> next() {
+                        long smallestKey = Long.MAX_VALUE;
+                        for (int i = 0; i < iterators.size(); i++) {
+                            CloseableIterator<KeyValue<T>> currIt = iterators.get(i);
+                            if (storedValues[i] == null && currIt.hasNext()) {
+                                storedValues[i] = currIt.next();
+                            }
+                            if (storedValues[i] != null) {
+                                smallestKey = Math.min(smallestKey, storedValues[i].getKey());
+                            }
+                        }
+                        T[] result = (T[]) Array.newInstance(objectClass, storedValues.length);
+                        for (int i = 0; i < iterators.size(); i++) {
+                            if (storedValues[i] != null && storedValues[i].getKey() == smallestKey) {
+                                result[i] = storedValues[i].getValue();
+                                storedValues[i] = null;
+                            }
+                        }
+                        return new KeyValue<>(smallestKey, result);
+                    }
+                };
+            }
+
+            @Override
+            public long apprSize() {
+                long maxSize = 0;
+                for (DataIterable<KeyValue<T>> iterable : iterables) {
+                    maxSize = Math.max(maxSize, iterable.apprSize());
+                }
+                return maxSize;
+            }
+        };
+    }
+
 
 }
