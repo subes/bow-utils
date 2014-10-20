@@ -14,6 +14,7 @@ import javax.management.openmbean.CompositeData;
 import java.io.File;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.MemoryUsage;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +23,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @EagerBowComponent
 public class MemoryManager implements CloseableComponent {
 
-    private final List<MemoryGobbler> memoryGobblers;
+    private final List<WeakReference<MemoryGobbler>> memoryGobblers;
     private MemoryStatus memoryStatus;
     private ReentrantLock globalCleanInProgressLock;
     private final FreeMemoryThread freeMemoryThread;
@@ -71,7 +72,7 @@ public class MemoryManager implements CloseableComponent {
 
     public void registerMemoryGobbler(MemoryGobbler memoryGobbler) {
         synchronized (memoryGobblers) {
-            this.memoryGobblers.add(memoryGobbler);
+            this.memoryGobblers.add(new WeakReference<MemoryGobbler>(memoryGobbler));
         }
     }
 
@@ -100,18 +101,24 @@ public class MemoryManager implements CloseableComponent {
                             HeapDumper.dumpHeap(dumpFile.getAbsolutePath(), false);
                             UI.write("Heap dumped to " + dumpFile.getAbsolutePath());
                         }
-                        List<MemoryGobbler> currCollections;
+                        List<WeakReference<MemoryGobbler>> currGobblers;
                         synchronized (memoryGobblers) {
-                            currCollections = new ArrayList<>(memoryGobblers);
+                            currGobblers = new ArrayList<>(memoryGobblers);
                         }
                         if (memoryStatus == MemoryStatus.CRITICAL) {
                             UI.write("[Memory] Memory critical! Printing usage:");
-                            for (MemoryGobbler memoryGobbler : memoryGobblers) {
-                                UI.write("[Memory] " + memoryGobbler.getClass().getSimpleName() + " " + memoryGobbler.getMemoryUsage());
+                            for (WeakReference<MemoryGobbler> reference : currGobblers) {
+                                MemoryGobbler memoryGobbler = reference.get();
+                                if (memoryGobbler != null) {
+                                    UI.write("[Memory] " + memoryGobbler.getClass().getSimpleName() + " " + memoryGobbler.getMemoryUsage());
+                                }
                             }
                         }
-                        for (MemoryGobbler collection : currCollections) {
-                            collection.freeMemory();
+                        for (WeakReference<MemoryGobbler> reference : currGobblers) {
+                            MemoryGobbler memoryGobbler = reference.get();
+                            if (memoryGobbler != null) {
+                                memoryGobbler.freeMemory();
+                            }
                         }
                         memoryStatus = MemoryStatus.FREE;
                         System.gc();
