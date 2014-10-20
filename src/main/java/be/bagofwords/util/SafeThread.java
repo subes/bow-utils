@@ -26,9 +26,15 @@ public abstract class SafeThread extends Thread implements CloseableComponent {
     }
 
     @Override
-    public void terminate() {
+    public void interrupt() {
         terminateRequested = true;
         doTerminate();
+        super.interrupt();
+    }
+
+    @Override
+    public void terminate() {
+        interrupt();
     }
 
     protected void doTerminate() {
@@ -48,7 +54,7 @@ public abstract class SafeThread extends Thread implements CloseableComponent {
     public void waitForFinish(long timeToWait) {
         long start = System.currentTimeMillis();
         while (!isFinished() && (timeToWait == -1 || System.currentTimeMillis() - start < timeToWait)) {
-            Utils.threadSleep(100);
+            Utils.threadSleep(10);
         }
     }
 

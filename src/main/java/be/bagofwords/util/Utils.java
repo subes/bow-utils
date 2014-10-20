@@ -155,7 +155,8 @@ public class Utils {
         try {
             Thread.sleep(ms);
         } catch (InterruptedException e) {
-            UI.writeError(e);
+            Thread.currentThread().notify();
+            //we don't like interrupted exceptions. Who came up with this idea?
         }
     }
 
