@@ -9,7 +9,6 @@ import java.util.Collections;
 public class BinComputer {
 
     private final ArrayList<Double> allValues;
-
     private final int maxSize;
 
     public BinComputer(int maxSize) {
@@ -61,6 +60,10 @@ public class BinComputer {
 
     public ArrayList<Double> getAllValues() {
         return allValues;
+    }
+
+    public boolean acceptsMoreData() {
+        return maxSize == -1 || maxSize > allValues.size();
     }
 
 }
