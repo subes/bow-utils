@@ -48,13 +48,33 @@ public class BinComputer {
 
     public void printBins(double[] bins) {
         int[] counts = getBinCounts(bins);
-        for (int i = 0; i < counts.length; i++) {
-            if (i == 0)
-                UI.write("... to " + bins[i] + " has " + counts[i] + " instances.");
-            else if (i == bins.length)
-                UI.write(bins[i - 1] + " to ... has " + counts[i] + " instances.");
-            else
-                UI.write(bins[i - 1] + " to " + bins[i] + " has " + counts[i] + " instances.");
+        if (bins.length == 0) {
+            boolean allSameValue = false;
+            double sameVal = -1;
+            if (allValues.size() > 0) {
+                allSameValue = true;
+                sameVal = allValues.get(0);
+                for (Double value : allValues) {
+                    if (sameVal != value) {
+                        allSameValue = false;
+                        break;
+                    }
+                }
+            }
+            if (allSameValue) {
+                UI.write("no bins (all values have value=" + sameVal + ") found " + counts[0] + " instances");
+            } else {
+                UI.write("no bins? found " + counts[0] + " instances");
+            }
+        } else {
+            for (int i = 0; i < counts.length; i++) {
+                if (i == 0)
+                    UI.write("... to " + bins[i] + " has " + counts[i] + " instances.");
+                else if (i == bins.length)
+                    UI.write(bins[i - 1] + " to ... has " + counts[i] + " instances.");
+                else
+                    UI.write(bins[i - 1] + " to " + bins[i] + " has " + counts[i] + " instances.");
+            }
         }
     }
 
