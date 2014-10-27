@@ -7,6 +7,7 @@ import be.bagofwords.application.annotations.EagerBowComponent;
 import be.bagofwords.counts.Counter;
 import be.bagofwords.ui.UI;
 import be.bagofwords.util.SafeThread;
+import be.bagofwords.util.Utils;
 import be.bagofwords.web.BaseController;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -27,6 +28,7 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
     private final TraceSampler traceSampler;
     private final Counter<Trace> relevantTracesCounter;
     private final Counter<Trace> lessRelevantTracesCounter;
+    private int numOfSamples;
 
     private boolean saveThreadSamplesToFile;
     private String locationForSavedThreadSamples;
@@ -58,6 +60,7 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
         this.lessRelevantTracesCounter = new Counter<>();
         this.traceSampler = new TraceSampler();
         this.traceSampler.start();
+        this.numOfSamples = 0;
     }
 
     @Override
@@ -67,10 +70,10 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
             synchronized (lessRelevantTracesCounter) {
                 result.append("Collected " + relevantTracesCounter.getTotal() + " samples.");
                 result.append("<h1>Relevant traces</h1><pre>");
-                ThreadSamplesPrinter.printTopTraces(result, relevantTracesCounter);
+                ThreadSamplesPrinter.printTopTraces(result, relevantTracesCounter, numOfSamples);
                 result.append("</pre>");
                 result.append("<h1>Other traces</h1><pre>");
-                ThreadSamplesPrinter.printTopTraces(result, lessRelevantTracesCounter);
+                ThreadSamplesPrinter.printTopTraces(result, lessRelevantTracesCounter, numOfSamples);
                 result.append("</pre>");
             }
         }
@@ -93,9 +96,9 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
                     StringBuilder sb = new StringBuilder();
                     sb.append("Traces for " + applicationName + " on " + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm") + "\n\n");
                     sb.append("-- Relevant traces --\n\n");
-                    ThreadSamplesPrinter.printTopTraces(sb, relevantTracesCounter);
+                    ThreadSamplesPrinter.printTopTraces(sb, relevantTracesCounter, numOfSamples);
                     sb.append("\n\n-- Less relevant traces --\n\n");
-                    ThreadSamplesPrinter.printTopTraces(sb, lessRelevantTracesCounter);
+                    ThreadSamplesPrinter.printTopTraces(sb, lessRelevantTracesCounter, numOfSamples);
                     FileUtils.writeStringToFile(file, sb.toString());
                 }
             }
@@ -131,6 +134,7 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
         protected void runInt() throws Exception {
             while (!isTerminateRequested()) {
                 Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
+                numOfSamples++;
                 for (Thread thread : stackTraces.keySet()) {
                     StackTraceElement[] thisTrace = stackTraces.get(thread);
                     String threadName = thread.getName();
@@ -138,13 +142,15 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
                         String methodName = thisTrace[0].getMethodName();
                         boolean notRelevantThread = threadName.equals("SparkServerThread") || threadName.equals("Signal Dispatcher") || threadName.equals("Finalizer");
                         notRelevantThread |= threadName.equals("DateCache") || threadName.startsWith("qtp") || threadName.equals("Reference Handler") || threadName.startsWith("HashSessionScavenger");
-                        notRelevantThread |= methodName.equals("accept0") || methodName.equals("accept") || methodName.equals("sleep") || methodName.equals("epollWait") || methodName.equals("socketAccept");
+                        notRelevantThread |= methodName.equals("accept0") || methodName.equals("accept") || methodName.equals("epollWait") || methodName.equals("socketAccept");
                         notRelevantThread |= threadName.equals("ChangedValueListener") && methodName.equals("socketRead0");
+                        notRelevantThread |= methodName.equals("park") && thisTrace[0].getClassName().equals("Unsafe");
                         notRelevantThread |= inReadNextActionMethod(threadName, thisTrace);
                         Trace parent = null;
+                        String normalizedThreadName = threadName.split("_")[0];
                         for (int i = thisTrace.length - 1; i >= 0; i--) {
                             StackTraceElement element = thisTrace[i];
-                            Trace trace = new Trace(element.getClassName() + "." + element.getMethodName() + "(" + element.getFileName() + ":" + element.getLineNumber() + ")", parent);
+                            Trace trace = new Trace(normalizedThreadName, element.getClassName() + "." + element.getMethodName() + "(" + element.getFileName() + ":" + element.getLineNumber() + ")", parent);
                             if (notRelevantThread) {
                                 synchronized (lessRelevantTracesCounter) {
                                     lessRelevantTracesCounter.inc(trace);
@@ -164,7 +170,7 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
                 synchronized (lessRelevantTracesCounter) {
                     lessRelevantTracesCounter.trim(MAX_NUM_OF_SAMPLES / 2);
                 }
-                Thread.sleep(200);
+                Utils.threadSleep(200);
             }
         }
 

@@ -4,10 +4,12 @@ import be.bagofwords.util.HashUtils;
 
 public class Trace {
 
+    private String threadName;
     private String line;
     private Trace parent;
 
-    public Trace(String line, Trace parent) {
+    public Trace(String threadName, String line, Trace parent) {
+        this.threadName = threadName;
         this.line = line;
         this.parent = parent;
     }
@@ -23,7 +25,7 @@ public class Trace {
     public boolean equals(Object other) {
         if (other instanceof Trace) {
             Trace otherTrace = (Trace) other;
-            return line.equals(otherTrace.getLine()) && (parent == otherTrace.getParent() || (parent != null && parent.equals(otherTrace.getParent())));
+            return threadName.equals(otherTrace.getThreadName()) && line.equals(otherTrace.getLine()) && (parent == otherTrace.getParent() || (parent != null && parent.equals(otherTrace.getParent())));
         } else {
             return false;
         }
@@ -49,5 +51,9 @@ public class Trace {
 
     public void setParent(Trace parent) {
         this.parent = parent;
+    }
+
+    public String getThreadName() {
+        return threadName;
     }
 }
