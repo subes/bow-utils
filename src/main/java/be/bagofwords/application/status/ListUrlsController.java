@@ -34,7 +34,7 @@ public class ListUrlsController extends BaseController implements CloseableCompo
         StringBuilder result = new StringBuilder();
         synchronized (urls) {
             for (Pair<String, String> url : urls) {
-                result.append("<a href=\"" + url.getSecond() + "\">" + url.getFirst() + " " + url.getSecond() + "</a><br>");
+                result.append("<a href=\"http://" + url.getSecond() + "\">" + url.getFirst() + " " + url.getSecond() + "</a><br>");
             }
         }
         return result.toString();

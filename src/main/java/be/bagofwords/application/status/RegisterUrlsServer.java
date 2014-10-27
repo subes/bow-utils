@@ -5,6 +5,7 @@ import be.bagofwords.ui.UI;
 import be.bagofwords.util.WrappedSocketConnection;
 
 import java.io.IOException;
+import java.net.Socket;
 
 /**
  * Created by Koen Deschacht (koendeschacht@gmail.com) on 07/10/14.
@@ -21,8 +22,9 @@ public class RegisterUrlsServer extends BaseServer {
     }
 
     @Override
-    protected SocketRequestHandler createSocketRequestHandler(WrappedSocketConnection wrappedSocketConnection) throws IOException {
-        return new SocketRequestHandler(wrappedSocketConnection) {
+    protected SocketRequestHandler createSocketRequestHandler(Socket socket) throws IOException {
+        WrappedSocketConnection connection = new WrappedSocketConnection(socket);
+        return new SocketRequestHandler(connection) {
             @Override
             protected void reportUnexpectedError(Exception ex) {
                 UI.writeError("Unexpected error in RegisterPathServer", ex);

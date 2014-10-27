@@ -15,20 +15,20 @@ public class WrappedSocketConnection implements Closeable {
     private boolean debug;
 
     public WrappedSocketConnection(String host, int port) throws IOException {
-        this(host, port, false);
+        this(host, port, false, false);
     }
 
-    public WrappedSocketConnection(String host, int port, boolean useLargeOutputBuffer) throws IOException {
-        this(new Socket(host, port), useLargeOutputBuffer);
+    public WrappedSocketConnection(String host, int port, boolean useLargeOutputBuffer, boolean useLargeInputBuffer) throws IOException {
+        this(new Socket(host, port), useLargeOutputBuffer, useLargeInputBuffer);
     }
 
     public WrappedSocketConnection(Socket socket) throws IOException {
-        this(socket, false);
+        this(socket, false, false);
     }
 
-    public WrappedSocketConnection(Socket socket, boolean useLargeOutputBuffer) throws IOException {
+    public WrappedSocketConnection(Socket socket, boolean useLargeOutputBuffer, boolean useLargeInputBuffer) throws IOException {
         this.socket = socket;
-        this.is = new DataInputStream(new BufferedInputStream(socket.getInputStream(), 32 * 1024));
+        this.is = new DataInputStream(new BufferedInputStream(socket.getInputStream(), useLargeInputBuffer ? 1024 * 1024 : 32 * 1024));
         this.os = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), useLargeOutputBuffer ? 1024 * 1024 : 32 * 1024));
     }
 

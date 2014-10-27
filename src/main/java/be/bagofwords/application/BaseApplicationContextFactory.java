@@ -1,5 +1,6 @@
 package be.bagofwords.application;
 
+import be.bagofwords.ui.UI;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -13,6 +14,7 @@ public abstract class BaseApplicationContextFactory implements ApplicationContex
 
     private AnnotationConfigApplicationContext applicationContext;
     private List<Object> singletons;
+    private boolean triedToCloseOnce = false;
 
     protected BaseApplicationContextFactory() {
         setSaneDefaultsForLog4J();

@@ -9,6 +9,7 @@ import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,15 +38,14 @@ public abstract class BaseServer extends SafeThread {
         }
     }
 
-    protected abstract SocketRequestHandler createSocketRequestHandler(WrappedSocketConnection wrappedSocketConnection) throws IOException;
+    protected abstract SocketRequestHandler createSocketRequestHandler(Socket socket) throws IOException;
 
     @Override
     protected void runInt() throws Exception {
         UI.write("Started server " + getName() + " on port " + scpPort);
         while (!serverSocket.isClosed() && !isTerminateRequested()) {
             try {
-                WrappedSocketConnection connection = new WrappedSocketConnection(serverSocket.accept());
-                SocketRequestHandler handler = createSocketRequestHandler(connection);
+                SocketRequestHandler handler = createSocketRequestHandler(serverSocket.accept());
                 if (handler != null) {
                     synchronized (runningRequestHandlers) {
                         runningRequestHandlers.add(handler);
