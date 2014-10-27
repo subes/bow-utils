@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 
 public class SerializationUtils {
 
@@ -148,6 +149,8 @@ public class SerializationUtils {
             }
             if (objectClass == String.class) {
                 return stringToBytes((String) value);
+            } else if (ByteArraySerializable.class.isAssignableFrom(objectClass)) {
+                return ((ByteArraySerializable) value).toByteArray();
             } else {
                 return stringToBytes(SerializationUtils.serializeObject(value, false));
             }
@@ -194,6 +197,12 @@ public class SerializationUtils {
             } else {
                 if (objectClass == String.class) {
                     return (T) objectAsString;
+                } else if (ByteArraySerializable.class.isAssignableFrom(objectClass)) {
+                    try {
+                        return objectClass.getConstructor(byte[].class).newInstance(Arrays.copyOfRange(value, offset, offset + length));
+                    } catch (Exception e) {
+                        throw new RuntimeException("Could not instantiate object of class " + objectClass + ". Does it have a constructor with as only argument an array of bytes?", e);
+                    }
                 } else {
                     return SerializationUtils.deserializeObject(objectAsString, objectClass);
                 }
@@ -235,16 +244,21 @@ public class SerializationUtils {
 
     public static byte[] longToBytes(long value) {
         byte[] bytes = new byte[8];
-        bytes[0] = (byte) (value >>> 56);
-        bytes[1] = (byte) (value >>> 48);
-        bytes[2] = (byte) (value >>> 40);
-        bytes[3] = (byte) (value >>> 32);
-        bytes[4] = (byte) (value >>> 24);
-        bytes[5] = (byte) (value >>> 16);
-        bytes[6] = (byte) (value >>> 8);
-        bytes[7] = (byte) (value);
+        longToBytes(value, bytes, 0);
         return bytes;
     }
+
+    public static void longToBytes(long value, byte[] bytes, int offset) {
+        bytes[offset] = (byte) (value >>> 56);
+        bytes[offset + 1] = (byte) (value >>> 48);
+        bytes[offset + 2] = (byte) (value >>> 40);
+        bytes[offset + 3] = (byte) (value >>> 32);
+        bytes[offset + 4] = (byte) (value >>> 24);
+        bytes[offset + 5] = (byte) (value >>> 16);
+        bytes[offset + 6] = (byte) (value >>> 8);
+        bytes[offset + 7] = (byte) (value);
+    }
+
 
     public static long bytesToLong(byte[] bytes) {
         return bytesToLong(bytes, 0);
