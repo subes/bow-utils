@@ -1,7 +1,5 @@
 package be.bagofwords.util;
 
-import be.bagofwords.ui.UI;
-
 import java.io.*;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
@@ -155,8 +153,16 @@ public class Utils {
         try {
             Thread.sleep(ms);
         } catch (InterruptedException e) {
-            Thread.currentThread().notify();
             //we don't like interrupted exceptions. Who came up with this idea?
+        }
+    }
+
+    public static boolean terminateWasRequestedForCurrentThread() {
+        Thread thread = Thread.currentThread();
+        if (thread instanceof SafeThread) {
+            return ((SafeThread) thread).isTerminateRequested();
+        } else {
+            return thread.isInterrupted();
         }
     }
 
