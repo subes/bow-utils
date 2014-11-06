@@ -2,7 +2,10 @@ package be.bagofwords.application.memory;
 
 import be.bagofwords.application.CloseableComponent;
 import be.bagofwords.application.annotations.EagerBowComponent;
+import be.bagofwords.application.status.StatusViewable;
+import be.bagofwords.counts.WindowOfCounts;
 import be.bagofwords.ui.UI;
+import be.bagofwords.util.NumUtils;
 import be.bagofwords.util.SafeThread;
 import be.bagofwords.util.Utils;
 import com.sun.management.GarbageCollectionNotificationInfo;
@@ -21,13 +24,15 @@ import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 @EagerBowComponent
-public class MemoryManager implements CloseableComponent {
+public class MemoryManager implements CloseableComponent, StatusViewable {
 
     private final List<WeakReference<MemoryGobbler>> memoryGobblers;
     private MemoryStatus memoryStatus;
     private ReentrantLock globalCleanInProgressLock;
     private final FreeMemoryThread freeMemoryThread;
     private boolean dumpHeapToFileWhenMemoryFull;
+    private WindowOfCounts numberOfMemoryFrees;
+    private WindowOfCounts numberOfBlockedMethods;
 
     public MemoryManager() {
         memoryGobblers = new ArrayList<>();
@@ -35,6 +40,8 @@ public class MemoryManager implements CloseableComponent {
         memoryStatus = MemoryStatus.FREE;
         freeMemoryThread = new FreeMemoryThread();
         freeMemoryThread.start();
+        numberOfMemoryFrees = new WindowOfCounts(10 * 60 * 1000);
+        numberOfBlockedMethods = new WindowOfCounts(10 * 60 * 1000);
     }
 
     public boolean getDumpHeapToFileWhenMemoryFull() {
@@ -60,6 +67,7 @@ public class MemoryManager implements CloseableComponent {
             //Don't write until enough memory is free
             long start = System.currentTimeMillis();
             long timeOfLastWarning = System.currentTimeMillis();
+            numberOfBlockedMethods.addCount();
             while (memoryStatus == MemoryStatus.CRITICAL) {
                 Utils.threadSleep(20);
                 if (System.currentTimeMillis() - timeOfLastWarning > 30000) {
@@ -78,6 +86,18 @@ public class MemoryManager implements CloseableComponent {
 
     public MemoryStatus getMemoryStatus() {
         return memoryStatus;
+    }
+
+    @Override
+    public void printHtmlStatus(StringBuilder sb) {
+        sb.append("<h1>Memory</h1>");
+        sb.append("Memory status: ").append(getMemoryStatus()).append("<br>");
+        String memoryUsed = NumUtils.fixedLength((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1000000, 4);
+        String freeMem = NumUtils.fixedLength((Runtime.getRuntime().maxMemory() - Runtime.getRuntime().totalMemory() + Runtime.getRuntime().freeMemory()) / 1000000, 4);
+        sb.append("Memory used: ").append(memoryUsed).append("Mb<br>");
+        sb.append("Free memory: ").append(freeMem).append("Mb<br>");
+        sb.append("On avg. one clean every ").append(numberOfMemoryFrees.getMsPerCount() * 1000).append(" s.<br>");
+        sb.append("On avg. ").append((60 * 1000 / numberOfBlockedMethods.getMsPerCount())).append(" blocked methods per minute.<br>");
     }
 
     private class FreeMemoryThread extends SafeThread {
@@ -114,12 +134,7 @@ public class MemoryManager implements CloseableComponent {
                                 }
                             }
                         }
-                        for (WeakReference<MemoryGobbler> reference : currGobblers) {
-                            MemoryGobbler memoryGobbler = reference.get();
-                            if (memoryGobbler != null) {
-                                memoryGobbler.freeMemory();
-                            }
-                        }
+                        freeMemory(currGobblers);
                         memoryStatus = MemoryStatus.FREE;
                         System.gc();
                         globalCleanInProgressLock.unlock();
@@ -163,6 +178,16 @@ public class MemoryManager implements CloseableComponent {
 
                 //Add the listener
                 emitter.addNotificationListener(listener, null, null);
+            }
+        }
+    }
+
+    private void freeMemory(List<WeakReference<MemoryGobbler>> currGobblers) {
+        numberOfMemoryFrees.addCount();
+        for (WeakReference<MemoryGobbler> reference : currGobblers) {
+            MemoryGobbler memoryGobbler = reference.get();
+            if (memoryGobbler != null) {
+                memoryGobbler.freeMemory();
             }
         }
     }

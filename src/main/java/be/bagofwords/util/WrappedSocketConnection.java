@@ -57,7 +57,6 @@ public class WrappedSocketConnection implements Closeable {
     }
 
     public void close() throws IOException {
-        os.flush();
         socket.close();
     }
 

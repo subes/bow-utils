@@ -1,21 +1,21 @@
 package be.bagofwords.cache;
 
-import be.bagofwords.application.CloseableComponent;
 import be.bagofwords.application.annotations.BowComponent;
 import be.bagofwords.application.memory.MemoryGobbler;
 import be.bagofwords.application.memory.MemoryManager;
 import be.bagofwords.application.status.StatusViewable;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
 @BowComponent
-public class CachesManager implements MemoryGobbler, StatusViewable, CloseableComponent {
+public class CachesManager implements MemoryGobbler, StatusViewable {
 
-    private List<Cache> caches;
+    private List<WeakReference<Cache>> caches;
     private MemoryManager memoryManager;
 
     @Autowired
@@ -27,8 +27,9 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
 
     @Override
     public void freeMemory() {
-        for (Cache cache : caches) {
-            if (!cache.isWriteBuffer()) {
+        for (WeakReference<Cache> reference : caches) {
+            Cache cache = reference.get();
+            if (cache != null) {
                 cache.moveCachedObjectsToOld();
             }
         }
@@ -36,13 +37,14 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
 
     @Override
     public String getMemoryUsage() {
-        return "caches read=" + sizeOfAllReadCaches() + " write=" + sizeOfAllWriteBuffers();
+        return "caches size=" + sizeOfAllReadCaches();
     }
 
     private long sizeOfAllReadCaches() {
         long result = 0;
-        for (Cache cache : caches) {
-            if (!cache.isWriteBuffer()) {
+        for (WeakReference<Cache> reference : caches) {
+            Cache cache = reference.get();
+            if (cache != null) {
                 result += cache.completeSize();
             }
         }
@@ -50,31 +52,22 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
     }
 
 
-    private long sizeOfAllWriteBuffers() {
-        long result = 0;
-        for (Cache cache : caches) {
-            if (cache.isWriteBuffer()) {
-                result += cache.size();
-            }
-        }
-        return result;
-    }
-
-    public synchronized <T> Cache<T> createNewCache(boolean isWriteBuffer, String name, Class<? extends T> objectClass) {
-        Cache newCache = new Cache<>(isWriteBuffer, name, objectClass);
-        caches.add(newCache);
+    public synchronized <T> Cache<T> createNewCache(String name, Class<? extends T> objectClass) {
+        Cache<T> newCache = new Cache<>(name, objectClass);
+        caches.add(new WeakReference<Cache>(newCache));
         return newCache;
     }
-
-    public List<Cache> getAllCaches() {
-        return caches;
-    }
-
 
     @Override
     public void printHtmlStatus(StringBuilder sb) {
         sb.append("<h1>Caches</h1>");
-        List<Cache> sortedCaches = new ArrayList<>(caches);
+        List<Cache> sortedCaches = new ArrayList<>();
+        for (WeakReference<Cache> reference : caches) {
+            Cache cache = reference.get();
+            if (cache != null) {
+                sortedCaches.add(cache);
+            }
+        }
         Collections.sort(sortedCaches, new Comparator<Cache>() {
             @Override
             public int compare(Cache o1, Cache o2) {
@@ -88,10 +81,6 @@ public class CachesManager implements MemoryGobbler, StatusViewable, CloseableCo
         }
     }
 
-    @Override
-    public synchronized void terminate() {
-        //do nothing
-    }
 
 }
 

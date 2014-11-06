@@ -1,40 +1,37 @@
 package be.bagofwords.cache;
 
 import be.bagofwords.counts.Counter;
+import be.bagofwords.ui.UI;
 import be.bagofwords.util.KeyValue;
-import it.unimi.dsi.fastutil.longs.*;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 
 public class Cache<T> {
 
-    private static final int NUMBER_OF_SEGMENTS_EXPONENT = 8;
+    private static final int NUMBER_OF_SEGMENTS_EXPONENT = 7;
     private static final int NUMBER_OF_SEGMENTS = 1 << NUMBER_OF_SEGMENTS_EXPONENT;
     private static final long SEGMENTS_KEY_MASK = NUMBER_OF_SEGMENTS - 1;
     private static final int NUMBER_OF_READ_PERMITS = 1000;
 
     private final Semaphore[] locks;
-    private final Map<Long, T>[] cachedObjects;
-    private final Map<Long, T>[] oldCachedObjects;
-    private final boolean isWriteBuffer;
+    private final DynamicMap<T>[] cachedObjects;
+    private final DynamicMap<T>[] oldCachedObjects;
     private final Class<? extends T> objectClass;
-    private final T nullValue;
     private final String name;
 
     private long numHits;
     private long numOfFetches;
     private Map<T, T> commonValues;
 
-
-    public Cache(boolean isWriteBuffer, String name, Class<? extends T> objectClass) {
+    public Cache(String name, Class<? extends T> objectClass) {
         this.objectClass = objectClass;
-        this.cachedObjects = new Map[NUMBER_OF_SEGMENTS];
+        this.cachedObjects = new DynamicMap[NUMBER_OF_SEGMENTS];
         createMaps(cachedObjects);
-        this.oldCachedObjects = new Map[NUMBER_OF_SEGMENTS];
+        this.oldCachedObjects = new DynamicMap[NUMBER_OF_SEGMENTS];
         createMaps(oldCachedObjects);
         this.locks = new Semaphore[NUMBER_OF_SEGMENTS];
         for (int i = 0; i < locks.length; i++) {
@@ -43,8 +40,6 @@ public class Cache<T> {
         this.numHits = 0;
         this.numOfFetches = 0;
         this.commonValues = null; //Will be initialized once we have enough values
-        this.isWriteBuffer = isWriteBuffer;
-        this.nullValue = getNullValueForType(objectClass);
         this.name = name;
     }
 
@@ -52,7 +47,7 @@ public class Cache<T> {
         incrementFetches();
         int segmentInd = getSegmentInd(key);
         lockRead(segmentInd);
-        T result = cachedObjects[segmentInd].get(key);
+        KeyValue<T> result = cachedObjects[segmentInd].get(key);
         if (result == null) {
             //maybe in old objects?
             result = oldCachedObjects[segmentInd].get(key);
@@ -60,7 +55,7 @@ public class Cache<T> {
             if (result != null) {
                 lockWrite(segmentInd);
                 //found in old, put in new
-                cachedObjects[segmentInd].put(key, result);
+                cachedObjects[segmentInd].put(key, result.getValue());
                 oldCachedObjects[segmentInd].remove(key);
                 unlockWrite(segmentInd);
             } else {
@@ -70,38 +65,16 @@ public class Cache<T> {
             unlockRead(segmentInd);
         }
         incrementHits();
-        if (result.equals(nullValue)) {
-            return new KeyValue<>(key, null);
-        } else {
-            return new KeyValue<>(key, result);
-        }
+        return result;
     }
 
     public void put(long key, T value) {
-        if (value == null) {
-            value = nullValue;
-        } else if (value.equals(nullValue)) {
-            throw new RuntimeException("Sorry but " + value + " is a reserved value to indicate null.");
-        } else {
-            value = makeSharedValueIfPossible(value);
-        }
+        value = makeSharedValueIfPossible(value);
         int segmentInd = getSegmentInd(key);
         lockWrite(segmentInd);
         cachedObjects[segmentInd].put(key, value);
         oldCachedObjects[segmentInd].remove(key);
         unlockWrite(segmentInd);
-    }
-
-    public List<KeyValue<T>> removeAllValues() {
-        final List<KeyValue<T>> valuesToRemove = new ArrayList<>();
-        doActionOnValues(new ValueAction() {
-            @Override
-            public void doAction(long key, Object value) {
-                valuesToRemove.add(new KeyValue(key, value));
-            }
-        });
-        clear(); //also clear old cached objects
-        return valuesToRemove;
     }
 
     public void clear() {
@@ -122,7 +95,7 @@ public class Cache<T> {
 
     public long size() {
         long result = 0;
-        for (Map map : cachedObjects) {
+        for (DynamicMap<T> map : cachedObjects) {
             result += map.size();
         }
         return result;
@@ -130,7 +103,7 @@ public class Cache<T> {
 
     public long completeSize() {
         long result = size();
-        for (Map map : oldCachedObjects) {
+        for (DynamicMap<T> map : oldCachedObjects) {
             result += map.size();
         }
         return result;
@@ -154,24 +127,6 @@ public class Cache<T> {
 
     public long getNumberOfFetches() {
         return numOfFetches;
-    }
-
-    public boolean isWriteBuffer() {
-        return isWriteBuffer;
-    }
-
-    private static <T> T getNullValueForType(Class<T> objectClass) {
-        if (objectClass == Long.class) {
-            return (T) new Long(Long.MAX_VALUE);
-        } else if (objectClass == Double.class) {
-            return (T) new Double(Double.MAX_VALUE);
-        } else if (objectClass == Float.class) {
-            return (T) new Float(Float.MAX_VALUE);
-        } else if (objectClass == Integer.class) {
-            return (T) new Integer(Integer.MAX_VALUE);
-        } else {
-            return (T) "xxxNULLxxx"; //we don't use a primitive map, so we can just use any object here
-        }
     }
 
     private void lockRead(int segmentInd) {
@@ -205,12 +160,8 @@ public class Cache<T> {
     private void doActionOnValues(ValueAction<T> valueAction) {
         for (int segmentInd = 0; segmentInd < NUMBER_OF_SEGMENTS; segmentInd++) {
             lockRead(segmentInd);
-            for (Map.Entry<Long, T> entry : cachedObjects[segmentInd].entrySet()) {
-                T value = entry.getValue();
-                if (value.equals(nullValue)) {
-                    value = null;
-                }
-                valueAction.doAction(entry.getKey(), value);
+            for (KeyValue<T> entry : cachedObjects[segmentInd].getAllValues()) {
+                valueAction.doAction(entry.getKey(), entry.getValue());
             }
             unlockRead(segmentInd);
         }
@@ -224,19 +175,9 @@ public class Cache<T> {
         this.numHits++;
     }
 
-    private void createMaps(Map[] result) {
+    private void createMaps(DynamicMap[] result) {
         for (int i = 0; i < result.length; i++) {
-            if (objectClass == Long.class) {
-                result[i] = new Long2LongOpenHashMap();
-            } else if (objectClass == Integer.class) {
-                result[i] = new Long2IntOpenHashMap();
-            } else if (objectClass == Float.class) {
-                result[i] = new Long2FloatOpenHashMap();
-            } else if (objectClass == Double.class) {
-                result[i] = new Long2DoubleOpenHashMap();
-            } else {
-                result[i] = new Long2ObjectOpenHashMap();
-            }
+            result[i] = new DynamicMap<>(objectClass);
         }
     }
 
@@ -269,7 +210,7 @@ public class Cache<T> {
 
     private Map computeCommonValues() {
         final Counter<Object> counter = new Counter<>();
-        doActionOnValues(new Cache.ValueAction() {
+        doActionOnValues(new ValueAction<T>() {
             @Override
             public void doAction(long key, Object value) {
                 if (counter.size() < 10000 && valueCanBeCommon(value)) {
@@ -283,6 +224,48 @@ public class Cache<T> {
             result.put(sorted.get(i), sorted.get(i));
         }
         return result;
+    }
+
+    public Iterator<KeyValue<T>> iterator() {
+        return new Iterator<KeyValue<T>>() {
+
+            private Iterator<KeyValue<T>> valuesInCurrSegment = null;
+            private int segmentInd = -1;
+
+            {
+                //constructor
+                findNext();
+            }
+
+            private void findNext() {
+                while (segmentInd < NUMBER_OF_SEGMENTS - 1 && (valuesInCurrSegment == null || !valuesInCurrSegment.hasNext())) {
+                    segmentInd++;
+                    lockRead(segmentInd);
+                    List<KeyValue<T>> allValues = cachedObjects[segmentInd].getAllValues();
+                    valuesInCurrSegment = allValues.iterator();
+                    unlockRead(segmentInd);
+                }
+            }
+
+            @Override
+            public boolean hasNext() {
+                return valuesInCurrSegment != null && valuesInCurrSegment.hasNext();
+            }
+
+            @Override
+            public KeyValue<T> next() {
+                KeyValue<T> next = valuesInCurrSegment.next();
+                if (!valuesInCurrSegment.hasNext()) {
+                    findNext();
+                }
+                return next;
+            }
+
+            @Override
+            public void remove() {
+                throw new RuntimeException("Not supported");
+            }
+        };
     }
 
     private interface ValueAction<T> {

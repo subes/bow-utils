@@ -127,12 +127,8 @@ public class Counter<T extends Object> {
         }
         if (size() > maxSize) {
             List<T> sortedKeys = sortedKeys();
-            long minCount = get(sortedKeys.get(sortedKeys.size() - 1));
-            Set<T> allKeys = keySet();
-            for (T key : allKeys) {
-                if (get(key) < minCount) {
-                    counts.remove(key);
-                }
+            for (int i = maxSize; i < sortedKeys.size(); i++) {
+                counts.remove(sortedKeys.get(i));
             }
         }
     }

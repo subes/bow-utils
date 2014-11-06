@@ -20,6 +20,10 @@ public class KeyValue<T extends Object> implements Comparable<KeyValue<T>>, Seri
         return value;
     }
 
+    public void setValue(T value) {
+        this.value = value;
+    }
+
     @Override
     public int compareTo(KeyValue<T> o) {
         return Long.compare(getKey(), o.getKey());

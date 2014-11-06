@@ -8,7 +8,7 @@ import java.util.List;
 
 public class ThreadSamplesPrinter {
 
-    private static final double MIN_FRACTION = 0.001;
+    private static final double MIN_FRACTION = 0.01;
 
     public static void printTopTraces(StringBuilder result, Counter<Trace> traces, int numOfSamples) {
         List<Trace> sortedTraces = new ArrayList<>(traces.sortedKeys());

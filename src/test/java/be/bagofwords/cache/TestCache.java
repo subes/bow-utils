@@ -19,7 +19,7 @@ public class TestCache {
         final int numOfValues = 1000000;
         MemoryManager freeMemoryManager = new MemoryManager();
         CachesManager cachesManager = new CachesManager(freeMemoryManager);
-        Cache<Long> firstCache = cachesManager.createNewCache(false, "test", Long.class);
+        Cache<Long> firstCache = cachesManager.createNewCache("test", Long.class);
         Random random = new Random();
         for (int i = 0; i < numOfValues; i++) {
             int cacheInd = random.nextInt();
@@ -28,7 +28,7 @@ public class TestCache {
         }
         Assert.assertTrue(firstCache.size() > 0);
         //Eventually all values should be removed
-        Cache otherCache = cachesManager.createNewCache(false, "test", Long.class);
+        Cache otherCache = cachesManager.createNewCache("test", Long.class);
         long maxTimeToTry = 5 * 60 * 1000; //usually this should take less then 5 minutes
         long start = System.currentTimeMillis();
         while (start + maxTimeToTry >= System.currentTimeMillis() && firstCache.size() > 0) {
@@ -45,7 +45,7 @@ public class TestCache {
         MemoryManager freeMemoryManager = new MemoryManager();
         CachesManager cachesManager = new CachesManager(freeMemoryManager);
         final Random random = new Random();
-        Cache<String> cache = cachesManager.createNewCache(false, "test", String.class);
+        Cache<String> cache = cachesManager.createNewCache("test", String.class);
         long maxTimeToTry = 30 * 1000; //30s
         long start = System.currentTimeMillis();
         while (start + maxTimeToTry >= System.currentTimeMillis()) {

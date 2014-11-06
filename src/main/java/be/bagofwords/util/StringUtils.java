@@ -657,11 +657,11 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
     }
 
     public static ExtendedString getPrevWord(SimpleString err, Set<String> wordsWithPunctuation) {
-        return WordIterator.findWord(err.getOrigText().toCharArray(), err.getStart(), Direction.Left, wordsWithPunctuation);
+        return WordIterator.findWord(err.getOrigText(), err.getStart(), Direction.Left, wordsWithPunctuation);
     }
 
     public static ExtendedString getNextWord(SimpleString err, Set<String> wordsWithPunctuation) {
-        return WordIterator.findWord(err.getOrigText().toCharArray(), err.getEnd(), Direction.Right, wordsWithPunctuation);
+        return WordIterator.findWord(err.getOrigText(), err.getEnd(), Direction.Right, wordsWithPunctuation);
     }
 
     public static String getLastNgram(SimpleString example, int length) {

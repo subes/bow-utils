@@ -17,7 +17,7 @@ public class SerializationUtils {
     public static final double DOUBLE_NULL = Double.MAX_VALUE;
     public static final int INT_NULL = Integer.MAX_VALUE;
     public static final float FLOAT_NULL = Float.MAX_VALUE;
-    public static final String STRING_NULL = "xyNUlLxy";
+    public static final byte[] STRING_NULL;
     private static final String ENCODING = "UTF-8";
 
     private static final ObjectMapper prettyPrintObjectMapper = new ObjectMapper();
@@ -25,6 +25,11 @@ public class SerializationUtils {
 
     static {
         prettyPrintObjectMapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
+        try {
+            STRING_NULL = "xyNUlLxy".getBytes(ENCODING);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static String serializeObject(Object object) {
@@ -143,16 +148,20 @@ public class SerializationUtils {
             return intToBytes(valueAsInt);
         } else {
             if (value == null) {
-                return stringToBytes(STRING_NULL);
-            } else if (value.equals(STRING_NULL)) {
-                throw new RuntimeException("Sorry " + value + " is a reserved value to indicate null");
+                return STRING_NULL;
             }
+            byte[] result;
             if (objectClass == String.class) {
-                return stringToBytes((String) value);
+                result = stringToBytes((String) value);
             } else if (ByteArraySerializable.class.isAssignableFrom(objectClass)) {
-                return ((ByteArraySerializable) value).toByteArray();
+                result = ((ByteArraySerializable) value).toByteArray();
             } else {
-                return stringToBytes(SerializationUtils.serializeObject(value, false));
+                result = stringToBytes(SerializationUtils.serializeObject(value, false));
+            }
+            if (Arrays.equals(result, STRING_NULL)) {
+                throw new RuntimeException("Sorry " + value + " is a reserved value to indicate null");
+            } else {
+                return result;
             }
         }
     }
@@ -191,20 +200,20 @@ public class SerializationUtils {
                 return null;
             }
         } else {
-            String objectAsString = bytesToString(value, offset, length);
-            if (STRING_NULL.equals(objectAsString)) {
+            byte[] actualValue = Arrays.copyOfRange(value, offset, offset + length);
+            if (Arrays.equals(STRING_NULL, actualValue)) {
                 return null;
             } else {
                 if (objectClass == String.class) {
-                    return (T) objectAsString;
+                    return (T) bytesToString(actualValue);
                 } else if (ByteArraySerializable.class.isAssignableFrom(objectClass)) {
                     try {
-                        return objectClass.getConstructor(byte[].class).newInstance(Arrays.copyOfRange(value, offset, offset + length));
+                        return objectClass.getConstructor(byte[].class).newInstance(actualValue);
                     } catch (Exception e) {
                         throw new RuntimeException("Could not instantiate object of class " + objectClass + ". Does it have a constructor with as only argument an array of bytes?", e);
                     }
                 } else {
-                    return SerializationUtils.deserializeObject(objectAsString, objectClass);
+                    return SerializationUtils.deserializeObject(bytesToString(actualValue), objectClass);
                 }
             }
         }

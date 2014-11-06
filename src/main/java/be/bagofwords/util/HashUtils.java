@@ -16,23 +16,33 @@ public class HashUtils {
     }
 
     public static long hashCode(String s) {
-        long hash = startHash;
-        for (int pos = 0; pos < s.length(); pos++)
-            hash = hash * addHash + s.charAt(pos);
-        return hash;
+        return appendHashCode(startHash, s);
     }
 
     public static long hashCode(String... strings) {
         long hash = startHash;
         for (String s : strings) {
-            for (int pos = 0; pos < s.length(); pos++)
-                hash = hash * addHash + s.charAt(pos);
+            hash = appendHashCode(hash, s);
+        }
+        return hash;
+    }
+
+    public static long appendHashCode(long hash, String s) {
+        for (int pos = 0; pos < s.length(); pos++) {
+            hash = hash * addHash + s.charAt(pos);
+        }
+        return hash;
+    }
+
+    public static long appendHashCode(long hash, SimpleString word) {
+        for (int pos = word.getStart(); pos < word.getEnd(); pos++) {
+            hash = hash * addHash + word.getOrigText().charAt(pos);
         }
         return hash;
     }
 
     public static long hashCode(SimpleString targetWord) {
-        return hashCode(targetWord.getS());
+        return appendHashCode(startHash, targetWord);
     }
 
     public static long randomDistributeHash(long hash) {

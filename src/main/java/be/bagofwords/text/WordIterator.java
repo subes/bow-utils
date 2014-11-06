@@ -16,35 +16,31 @@ public class WordIterator {
 
     private ExtendedString nextWord;
     private int pos;
-    private final char[] data;
+    private final String text;
     private final Set<String> wordsWithPunct;
 
 
     public WordIterator(String text, Set<String> wordsWithPunct) {
-        this(text.toCharArray(), wordsWithPunct);
-    }
-
-    public WordIterator(char[] data, Set<String> wordsWithPunct) {
-        this.data = data;
+        this.text = text;
         this.pos = 0;
         this.wordsWithPunct = wordsWithPunct;
         findNextWord();
     }
 
     private void findNextWord() {
-        nextWord = findWord(data, pos, Direction.Right, wordsWithPunct);
+        nextWord = findWord(text, pos, Direction.Right, wordsWithPunct);
         if (nextWord != null) {
             pos = nextWord.end;
         }
     }
 
-    public static ExtendedString findWord(char[] data, int startOfSearch, Direction direction, Set<String> wordsWithPunct) {
-        ExtendedString nextWord = findWord(data, startOfSearch, direction, true);
+    public static ExtendedString findWord(String text, int startOfSearch, Direction direction, Set<String> wordsWithPunct) {
+        ExtendedString nextWord = findWord(text, startOfSearch, direction, true);
         if (nextWord != null && containsNonLetterOrNumber(nextWord)) {
             if (wordsWithPunct.contains(nextWord.toString())) {
                 return nextWord;
             } else {
-                return findWord(data, startOfSearch, direction, false);
+                return findWord(text, startOfSearch, direction, false);
             }
         }
         return nextWord;
@@ -60,32 +56,32 @@ public class WordIterator {
         return false;
     }
 
-    public static ExtendedString findWord(char[] data, int startOfSearch, Direction direction, boolean allowPossibleWordChars) {
+    public static ExtendedString findWord(String text, int startOfSearch, Direction direction, boolean allowPossibleWordChars) {
         int pos = startOfSearch;
         if (direction == Direction.Right) {
-            while (pos < data.length && isNonWordChar(data[pos], false)) {
+            while (pos < text.length() && isNonWordChar(text.charAt(pos), false)) {
                 pos++;
             }
             int start = pos;
-            while (pos - start < MAX_LENGTH_OF_WORD && pos < data.length && !isNonWordChar(data[pos], allowPossibleWordChars)) {
+            while (pos - start < MAX_LENGTH_OF_WORD && pos < text.length() && !isNonWordChar(text.charAt(pos), allowPossibleWordChars)) {
                 pos++;
             }
             if (start < pos) {
-                ExtendedString result = new ExtendedString(data, start, pos);
+                ExtendedString result = new ExtendedString(text, start, pos);
                 return result;
             } else
                 return null;
         } else {
             pos--;
-            while (pos >= 0 && isNonWordChar(data[pos], false)) {
+            while (pos >= 0 && isNonWordChar(text.charAt(pos), false)) {
                 pos--;
             }
             int start = pos;
-            while (start - pos < MAX_LENGTH_OF_WORD && pos >= 0 && !isNonWordChar(data[pos], allowPossibleWordChars)) {
+            while (start - pos < MAX_LENGTH_OF_WORD && pos >= 0 && !isNonWordChar(text.charAt(pos), allowPossibleWordChars)) {
                 pos--;
             }
             if (start > pos)
-                return new ExtendedString(data, pos + 1, start + 1);
+                return new ExtendedString(text, pos + 1, start + 1);
             else
                 return null;
         }
