@@ -74,7 +74,6 @@ public interface LongMap<T> {
          * removed from the map (by the iterator's <tt>remove</tt> operation).
          *
          * @param value new value to be stored in this entry
-         * @return old value corresponding to the entry
          * @throws UnsupportedOperationException if the <tt>put</tt> operation
          *                                       is not supported by the backing map
          * @throws ClassCastException            if the class of the specified value
