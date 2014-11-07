@@ -80,7 +80,7 @@ public class MemoryManager implements CloseableComponent, StatusViewable {
 
     public void registerMemoryGobbler(MemoryGobbler memoryGobbler) {
         synchronized (memoryGobblers) {
-            this.memoryGobblers.add(new WeakReference<MemoryGobbler>(memoryGobbler));
+            this.memoryGobblers.add(new WeakReference<>(memoryGobbler));
         }
     }
 

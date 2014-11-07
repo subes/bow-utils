@@ -1,13 +1,9 @@
 package be.bagofwords.cache;
 
-import be.bagofwords.counts.Counter;
-import be.bagofwords.ui.UI;
 import be.bagofwords.util.KeyValue;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Semaphore;
 
 public class Cache<T> {
@@ -25,7 +21,6 @@ public class Cache<T> {
 
     private long numHits;
     private long numOfFetches;
-    private Map<T, T> commonValues;
 
     public Cache(String name, Class<? extends T> objectClass) {
         this.objectClass = objectClass;
@@ -39,7 +34,6 @@ public class Cache<T> {
         }
         this.numHits = 0;
         this.numOfFetches = 0;
-        this.commonValues = null; //Will be initialized once we have enough values
         this.name = name;
     }
 
@@ -69,7 +63,6 @@ public class Cache<T> {
     }
 
     public void put(long key, T value) {
-        value = makeSharedValueIfPossible(value);
         int segmentInd = getSegmentInd(key);
         lockWrite(segmentInd);
         cachedObjects[segmentInd].put(key, value);
@@ -183,47 +176,6 @@ public class Cache<T> {
 
     private int getSegmentInd(long key) {
         return (int) (key & SEGMENTS_KEY_MASK);
-    }
-
-    private T makeSharedValueIfPossible(T value) {
-        if (valueCanBeCommon(value)) {
-            if (commonValues == null) {
-                //Can we compute the common values?
-                if (size() > 10000) {
-                    commonValues = computeCommonValues();
-                }
-            }
-            if (commonValues != null) {
-                //Fetch common value
-                T commonValue = commonValues.get(value);
-                if (commonValue != null) {
-                    return commonValue;
-                }
-            }
-        }
-        return value;
-    }
-
-    private <T> boolean valueCanBeCommon(T value) {
-        return value != null && (value instanceof String || value instanceof Byte || value instanceof Character || value instanceof Boolean);
-    }
-
-    private Map computeCommonValues() {
-        final Counter<Object> counter = new Counter<>();
-        doActionOnValues(new ValueAction<T>() {
-            @Override
-            public void doAction(long key, Object value) {
-                if (counter.size() < 10000 && valueCanBeCommon(value)) {
-                    counter.inc(value);
-                }
-            }
-        });
-        List<Object> sorted = counter.sortedKeys();
-        Map<Object, Object> result = new HashMap<>();
-        for (int i = 0; i < sorted.size() && i < 1000; i++) {
-            result.put(sorted.get(i), sorted.get(i));
-        }
-        return result;
     }
 
     public Iterator<KeyValue<T>> iterator() {

@@ -2,11 +2,10 @@ package be.bagofwords.cache;
 
 import be.bagofwords.application.memory.MemoryManager;
 import be.bagofwords.util.HashUtils;
+import be.bagofwords.util.Utils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 /**
@@ -36,42 +35,7 @@ public class TestCache {
             otherCache.put(key, key);
         }
         Assert.assertEquals(0, firstCache.size());
-        freeMemoryManager.terminate();
-    }
-
-    @Test
-    public void testUseCommonValues() {
-        final int numOfDifferentValues = 20;
-        MemoryManager freeMemoryManager = new MemoryManager();
-        CachesManager cachesManager = new CachesManager(freeMemoryManager);
-        final Random random = new Random();
-        Cache<String> cache = cachesManager.createNewCache("test", String.class);
-        long maxTimeToTry = 30 * 1000; //30s
-        long start = System.currentTimeMillis();
-        while (start + maxTimeToTry >= System.currentTimeMillis()) {
-            long key = random.nextInt();
-            String value = Integer.toString(random.nextInt(numOfDifferentValues));
-            cache.put(key, value);
-        }
-        List<String> values = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            long key = i;
-            String value = Integer.toString(i * numOfDifferentValues / 100);
-            cache.put(key, value);
-            String cachedValue = cache.get(key).getValue();
-            Assert.assertEquals(value, cachedValue);
-            if (!values.contains(cachedValue)) {
-                values.add(cachedValue);
-            } else {
-                boolean identicalObj = false;
-                for (String existingValue : values) {
-                    if (existingValue == cachedValue) {
-                        identicalObj = true;
-                    }
-                }
-                Assert.assertTrue(identicalObj);
-            }
-        }
+        cachesManager.createNewCache("unused_cache", Long.class); //just to make sure that the caches manager is not garbage collected before the end of the test
         freeMemoryManager.terminate();
     }
 

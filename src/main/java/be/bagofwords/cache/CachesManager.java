@@ -16,17 +16,15 @@ import java.util.List;
 public class CachesManager implements MemoryGobbler, StatusViewable {
 
     private List<WeakReference<Cache>> caches;
-    private MemoryManager memoryManager;
 
     @Autowired
     public CachesManager(MemoryManager memoryManager) {
         this.caches = new ArrayList<>();
-        this.memoryManager = memoryManager;
-        this.memoryManager.registerMemoryGobbler(this);
+        memoryManager.registerMemoryGobbler(this);
     }
 
     @Override
-    public void freeMemory() {
+    public synchronized void freeMemory() {
         for (WeakReference<Cache> reference : caches) {
             Cache cache = reference.get();
             if (cache != null) {
@@ -40,7 +38,7 @@ public class CachesManager implements MemoryGobbler, StatusViewable {
         return "caches size=" + sizeOfAllReadCaches();
     }
 
-    private long sizeOfAllReadCaches() {
+    private synchronized long sizeOfAllReadCaches() {
         long result = 0;
         for (WeakReference<Cache> reference : caches) {
             Cache cache = reference.get();
@@ -59,7 +57,7 @@ public class CachesManager implements MemoryGobbler, StatusViewable {
     }
 
     @Override
-    public void printHtmlStatus(StringBuilder sb) {
+    public synchronized void printHtmlStatus(StringBuilder sb) {
         sb.append("<h1>Caches</h1>");
         List<Cache> sortedCaches = new ArrayList<>();
         for (WeakReference<Cache> reference : caches) {
