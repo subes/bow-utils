@@ -114,6 +114,7 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
         synchronized (lessRelevantTracesCounter) {
             lessRelevantTracesCounter.clear();
         }
+        numOfSamples = 0;
     }
 
     public Counter<Trace> getRelevantTracesCounter() {
@@ -187,4 +188,7 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
 
     }
 
+    public int getNumOfSamples() {
+        return numOfSamples;
+    }
 }

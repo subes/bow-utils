@@ -15,7 +15,7 @@ import java.util.List;
 @BowComponent
 public class CachesManager implements MemoryGobbler, StatusViewable {
 
-    private List<WeakReference<Cache>> caches;
+    private List<WeakReference<ReadCache>> caches;
 
     @Autowired
     public CachesManager(MemoryManager memoryManager) {
@@ -25,10 +25,10 @@ public class CachesManager implements MemoryGobbler, StatusViewable {
 
     @Override
     public synchronized void freeMemory() {
-        for (WeakReference<Cache> reference : caches) {
-            Cache cache = reference.get();
-            if (cache != null) {
-                cache.moveCachedObjectsToOld();
+        for (WeakReference<ReadCache> reference : caches) {
+            ReadCache readCache = reference.get();
+            if (readCache != null) {
+                readCache.moveCachedObjectsToOld();
             }
         }
     }
@@ -40,41 +40,41 @@ public class CachesManager implements MemoryGobbler, StatusViewable {
 
     private synchronized long sizeOfAllReadCaches() {
         long result = 0;
-        for (WeakReference<Cache> reference : caches) {
-            Cache cache = reference.get();
-            if (cache != null) {
-                result += cache.completeSize();
+        for (WeakReference<ReadCache> reference : caches) {
+            ReadCache readCache = reference.get();
+            if (readCache != null) {
+                result += readCache.completeSize();
             }
         }
         return result;
     }
 
 
-    public synchronized <T> Cache<T> createNewCache(String name, Class<? extends T> objectClass) {
-        Cache<T> newCache = new Cache<>(name, objectClass);
-        caches.add(new WeakReference<Cache>(newCache));
-        return newCache;
+    public synchronized <T> ReadCache<T> createNewCache(String name, Class<? extends T> objectClass) {
+        ReadCache<T> newReadCache = new ReadCache<>(name, objectClass);
+        caches.add(new WeakReference<ReadCache>(newReadCache));
+        return newReadCache;
     }
 
     @Override
     public synchronized void printHtmlStatus(StringBuilder sb) {
         sb.append("<h1>Caches</h1>");
-        List<Cache> sortedCaches = new ArrayList<>();
-        for (WeakReference<Cache> reference : caches) {
-            Cache cache = reference.get();
-            if (cache != null) {
-                sortedCaches.add(cache);
+        List<ReadCache> sortedCaches = new ArrayList<>();
+        for (WeakReference<ReadCache> reference : caches) {
+            ReadCache readCache = reference.get();
+            if (readCache != null) {
+                sortedCaches.add(readCache);
             }
         }
-        Collections.sort(sortedCaches, new Comparator<Cache>() {
+        Collections.sort(sortedCaches, new Comparator<ReadCache>() {
             @Override
-            public int compare(Cache o1, Cache o2) {
+            public int compare(ReadCache o1, ReadCache o2) {
                 return -Double.compare(o1.size(), o2.size());
             }
         });
-        for (Cache cache : sortedCaches) {
-            double hitRatio = cache.getNumberOfHits() == 0 ? 0 : cache.getNumberOfHits() / (double) cache.getNumberOfFetches();
-            sb.append(cache.getName() + " size=" + cache.size() + " fetches=" + cache.getNumberOfFetches() + " hits=" + cache.getNumberOfHits() + " hitRatio=" + hitRatio);
+        for (ReadCache readCache : sortedCaches) {
+            double hitRatio = readCache.getNumberOfHits() == 0 ? 0 : readCache.getNumberOfHits() / (double) readCache.getNumberOfFetches();
+            sb.append(readCache.getName() + " size=" + readCache.size() + " fetches=" + readCache.getNumberOfFetches() + " hits=" + readCache.getNumberOfHits() + " hitRatio=" + hitRatio);
             sb.append("<br>");
         }
     }

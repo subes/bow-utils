@@ -101,4 +101,10 @@ public class DynamicMap<T> {
     public void clear() {
         values.clear();
     }
+
+    public void putAll(DynamicMap<T> map) {
+        for (LongMap.Entry<T> entry : map.values.entrySet()) {
+            values.put(entry.getKey(), entry.getValue());
+        }
+    }
 }

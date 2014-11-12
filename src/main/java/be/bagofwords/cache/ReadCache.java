@@ -6,31 +6,30 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 
-public class Cache<T> {
+public class ReadCache<T> {
 
-    private static final int NUMBER_OF_SEGMENTS_EXPONENT = 7;
+    private static final int NUMBER_OF_SEGMENTS_EXPONENT = 10;
     private static final int NUMBER_OF_SEGMENTS = 1 << NUMBER_OF_SEGMENTS_EXPONENT;
     private static final long SEGMENTS_KEY_MASK = NUMBER_OF_SEGMENTS - 1;
-    private static final int NUMBER_OF_READ_PERMITS = 1000;
 
     private final Semaphore[] locks;
+    private final DynamicMap<T>[] newCachedObjects;
     private final DynamicMap<T>[] cachedObjects;
-    private final DynamicMap<T>[] oldCachedObjects;
     private final Class<? extends T> objectClass;
     private final String name;
 
     private long numHits;
     private long numOfFetches;
 
-    public Cache(String name, Class<? extends T> objectClass) {
+    public ReadCache(String name, Class<? extends T> objectClass) {
         this.objectClass = objectClass;
+        this.newCachedObjects = new DynamicMap[NUMBER_OF_SEGMENTS];
+        createMaps(newCachedObjects);
         this.cachedObjects = new DynamicMap[NUMBER_OF_SEGMENTS];
         createMaps(cachedObjects);
-        this.oldCachedObjects = new DynamicMap[NUMBER_OF_SEGMENTS];
-        createMaps(oldCachedObjects);
         this.locks = new Semaphore[NUMBER_OF_SEGMENTS];
         for (int i = 0; i < locks.length; i++) {
-            this.locks[i] = new Semaphore(NUMBER_OF_READ_PERMITS);
+            this.locks[i] = new Semaphore(1);
         }
         this.numHits = 0;
         this.numOfFetches = 0;
@@ -40,49 +39,41 @@ public class Cache<T> {
     public KeyValue<T> get(long key) {
         incrementFetches();
         int segmentInd = getSegmentInd(key);
-        lockRead(segmentInd);
         KeyValue<T> result = cachedObjects[segmentInd].get(key);
-        if (result == null) {
-            //maybe in old objects?
-            result = oldCachedObjects[segmentInd].get(key);
-            unlockRead(segmentInd);
-            if (result != null) {
-                lockWrite(segmentInd);
-                //found in old, put in new
-                cachedObjects[segmentInd].put(key, result.getValue());
-                oldCachedObjects[segmentInd].remove(key);
-                unlockWrite(segmentInd);
-            } else {
-                return null; //not in cache
-            }
-        } else {
-            unlockRead(segmentInd);
+        if (result != null) {
+            incrementHits();
         }
-        incrementHits();
         return result;
     }
 
     public void put(long key, T value) {
         int segmentInd = getSegmentInd(key);
-        lockWrite(segmentInd);
-        cachedObjects[segmentInd].put(key, value);
-        oldCachedObjects[segmentInd].remove(key);
-        unlockWrite(segmentInd);
+        boolean lock = tryLockWrite(segmentInd);
+        if (lock) {
+            newCachedObjects[segmentInd].put(key, value);
+            long currSize = newCachedObjects[segmentInd].size();
+            if (currSize > cachedObjects[segmentInd].size() / 4) {
+                newCachedObjects[segmentInd].putAll(cachedObjects[segmentInd]);
+                cachedObjects[segmentInd] = newCachedObjects[segmentInd];
+                newCachedObjects[segmentInd] = new DynamicMap<>(objectClass);
+            }
+            unlockWrite(segmentInd);
+        }
     }
 
     public void clear() {
         lockWriteAll();
+        createMaps(newCachedObjects);
         createMaps(cachedObjects);
-        createMaps(oldCachedObjects);
         unlockWriteAll();
     }
 
     public void moveCachedObjectsToOld() {
         lockWriteAll();
-        for (int i = 0; i < cachedObjects.length; i++) {
-            oldCachedObjects[i] = cachedObjects[i];
+        for (int i = 0; i < newCachedObjects.length; i++) {
+            cachedObjects[i] = newCachedObjects[i];
         }
-        createMaps(cachedObjects);
+        createMaps(newCachedObjects);
         unlockWriteAll();
     }
 
@@ -96,7 +87,7 @@ public class Cache<T> {
 
     public long completeSize() {
         long result = size();
-        for (DynamicMap<T> map : oldCachedObjects) {
+        for (DynamicMap<T> map : newCachedObjects) {
             result += map.size();
         }
         return result;
@@ -105,8 +96,8 @@ public class Cache<T> {
     public void remove(long key) {
         int segmentInd = getSegmentInd(key);
         lockWrite(segmentInd);
+        newCachedObjects[segmentInd].remove(key);
         cachedObjects[segmentInd].remove(key);
-        oldCachedObjects[segmentInd].remove(key);
         unlockWrite(segmentInd);
     }
 
@@ -122,41 +113,27 @@ public class Cache<T> {
         return numOfFetches;
     }
 
-    private void lockRead(int segmentInd) {
-        locks[segmentInd].acquireUninterruptibly(1);
-    }
-
-    private void unlockRead(int segmentInd) {
-        locks[segmentInd].release(1);
-    }
-
     private void lockWrite(int segmentInd) {
-        locks[segmentInd].acquireUninterruptibly(NUMBER_OF_READ_PERMITS);
+        locks[segmentInd].acquireUninterruptibly();
     }
 
     private void unlockWrite(int segmentInd) {
-        locks[segmentInd].release(NUMBER_OF_READ_PERMITS);
+        locks[segmentInd].release();
     }
 
     private void lockWriteAll() {
         for (int i = 0; i < NUMBER_OF_SEGMENTS; i++) {
-            locks[i].acquireUninterruptibly(NUMBER_OF_READ_PERMITS);
+            lockWrite(i);
         }
+    }
+
+    private boolean tryLockWrite(int segmentInd) {
+        return locks[segmentInd].tryAcquire();
     }
 
     private void unlockWriteAll() {
         for (int i = 0; i < NUMBER_OF_SEGMENTS; i++) {
-            locks[i].release(NUMBER_OF_READ_PERMITS);
-        }
-    }
-
-    private void doActionOnValues(ValueAction<T> valueAction) {
-        for (int segmentInd = 0; segmentInd < NUMBER_OF_SEGMENTS; segmentInd++) {
-            lockRead(segmentInd);
-            for (KeyValue<T> entry : cachedObjects[segmentInd].getAllValues()) {
-                valueAction.doAction(entry.getKey(), entry.getValue());
-            }
-            unlockRead(segmentInd);
+            unlockWrite(i);
         }
     }
 
@@ -192,10 +169,8 @@ public class Cache<T> {
             private void findNext() {
                 while (segmentInd < NUMBER_OF_SEGMENTS - 1 && (valuesInCurrSegment == null || !valuesInCurrSegment.hasNext())) {
                     segmentInd++;
-                    lockRead(segmentInd);
                     List<KeyValue<T>> allValues = cachedObjects[segmentInd].getAllValues();
                     valuesInCurrSegment = allValues.iterator();
-                    unlockRead(segmentInd);
                 }
             }
 
@@ -220,9 +195,4 @@ public class Cache<T> {
         };
     }
 
-    private interface ValueAction<T> {
-
-        void doAction(long key, T value);
-
-    }
 }
