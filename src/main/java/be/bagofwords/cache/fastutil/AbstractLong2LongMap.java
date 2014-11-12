@@ -36,6 +36,8 @@ package be.bagofwords.cache.fastutil;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Koen Deschacht (koendeschacht@gmail.com), 2014-11-11
  */
 
 import it.unimi.dsi.fastutil.longs.*;
