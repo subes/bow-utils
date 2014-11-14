@@ -34,8 +34,8 @@ public class CachesManager implements MemoryGobbler, StatusViewable {
     }
 
     @Override
-    public String getMemoryUsage() {
-        return "caches size=" + sizeOfAllReadCaches();
+    public long getMemoryUsage() {
+        return sizeOfAllReadCaches();
     }
 
     private synchronized long sizeOfAllReadCaches() {

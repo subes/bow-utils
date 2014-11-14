@@ -3,12 +3,11 @@ package be.bagofwords.cache;
 import be.bagofwords.util.KeyValue;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.Semaphore;
 
 public class ReadCache<T> {
 
-    private static final int NUMBER_OF_SEGMENTS_EXPONENT = 10;
+    private static final int NUMBER_OF_SEGMENTS_EXPONENT = 8;
     private static final int NUMBER_OF_SEGMENTS = 1 << NUMBER_OF_SEGMENTS_EXPONENT;
     private static final long SEGMENTS_KEY_MASK = NUMBER_OF_SEGMENTS - 1;
 
@@ -169,8 +168,7 @@ public class ReadCache<T> {
             private void findNext() {
                 while (segmentInd < NUMBER_OF_SEGMENTS - 1 && (valuesInCurrSegment == null || !valuesInCurrSegment.hasNext())) {
                     segmentInd++;
-                    List<KeyValue<T>> allValues = cachedObjects[segmentInd].getAllValues();
-                    valuesInCurrSegment = allValues.iterator();
+                    valuesInCurrSegment = cachedObjects[segmentInd].iterator();
                 }
             }
 

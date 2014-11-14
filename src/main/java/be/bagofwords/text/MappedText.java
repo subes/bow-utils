@@ -2,8 +2,8 @@ package be.bagofwords.text;
 
 import be.bagofwords.ui.UI;
 import be.bagofwords.util.Pair;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
-import org.codehaus.jackson.annotate.JsonIgnore;
 
 import java.io.Serializable;
 

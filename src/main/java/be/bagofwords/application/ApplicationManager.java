@@ -16,6 +16,7 @@ public class ApplicationManager {
             UI.writeError("Received unexpected exception, terminating application.", exp);
         } finally {
             if (applicationContext != null) {
+                applicationContext.stop();
                 applicationContext.close();
             }
         }

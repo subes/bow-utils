@@ -63,12 +63,12 @@ public class MemoryManager implements CloseableComponent, StatusViewable {
      */
 
     public void waitForSufficientMemory() {
-        if (memoryStatus == MemoryStatus.CRITICAL && !(globalCleanInProgressLock.isLocked() && globalCleanInProgressLock.isHeldByCurrentThread())) {
+        if (needsToWaitForMemory()) {
             //Don't write until enough memory is free
             long start = System.currentTimeMillis();
             long timeOfLastWarning = System.currentTimeMillis();
             numberOfBlockedMethods.addCount();
-            while (memoryStatus == MemoryStatus.CRITICAL) {
+            while (needsToWaitForMemory()) {
                 Utils.threadSleep(20);
                 if (System.currentTimeMillis() - timeOfLastWarning > 30000) {
                     UI.writeWarning("Method has been waiting for more memory for " + (System.currentTimeMillis() - start) + " ms");
@@ -76,6 +76,10 @@ public class MemoryManager implements CloseableComponent, StatusViewable {
                 }
             }
         }
+    }
+
+    private boolean needsToWaitForMemory() {
+        return memoryStatus == MemoryStatus.LOW || memoryStatus == MemoryStatus.CRITICAL && !(globalCleanInProgressLock.isLocked() && globalCleanInProgressLock.isHeldByCurrentThread());
     }
 
     public void registerMemoryGobbler(MemoryGobbler memoryGobbler) {
@@ -115,28 +119,23 @@ public class MemoryManager implements CloseableComponent, StatusViewable {
                 try {
                     if (memoryStatus == MemoryStatus.LOW || memoryStatus == MemoryStatus.CRITICAL) {
                         globalCleanInProgressLock.lock();
-                        //Low on memory, clean caches
-                        if (dumpHeapToFileWhenMemoryFull) {
-                            File dumpFile = new File("heap_" + System.currentTimeMillis() + ".bin");
-                            HeapDumper.dumpHeap(dumpFile.getAbsolutePath(), false);
-                            UI.write("Heap dumped to " + dumpFile.getAbsolutePath());
-                        }
                         List<WeakReference<MemoryGobbler>> currGobblers;
                         synchronized (memoryGobblers) {
                             currGobblers = new ArrayList<>(memoryGobblers);
                         }
                         if (memoryStatus == MemoryStatus.CRITICAL) {
-                            UI.write("[Memory] Memory critical! Printing usage:");
-                            for (WeakReference<MemoryGobbler> reference : currGobblers) {
-                                MemoryGobbler memoryGobbler = reference.get();
-                                if (memoryGobbler != null) {
-                                    UI.write("[Memory] " + memoryGobbler.getClass().getSimpleName() + " " + memoryGobbler.getMemoryUsage());
-                                }
-                            }
+                            printMemoryUsage(currGobblers);
                         }
                         freeMemory(currGobblers);
                         memoryStatus = MemoryStatus.FREE;
                         System.gc();
+                        //Dump memory to find any memory leaks
+                        if (dumpHeapToFileWhenMemoryFull) {
+                            UI.write("Dumping heap...");
+                            File dumpFile = new File("heap_" + System.currentTimeMillis() + ".bin");
+                            HeapDumper.dumpHeap(dumpFile.getAbsolutePath(), false);
+                            UI.write("Heap dumped to " + dumpFile.getAbsolutePath());
+                        }
                         globalCleanInProgressLock.unlock();
                     }
                 } catch (Throwable exp) {
@@ -178,6 +177,19 @@ public class MemoryManager implements CloseableComponent, StatusViewable {
 
                 //Add the listener
                 emitter.addNotificationListener(listener, null, null);
+            }
+        }
+    }
+
+    private void printMemoryUsage(List<WeakReference<MemoryGobbler>> currGobblers) {
+        synchronized (UI.getInstance()) {
+            UI.write("[Memory] Memory critical! Printing usage:");
+            for (WeakReference<MemoryGobbler> reference : currGobblers) {
+                MemoryGobbler memoryGobbler = reference.get();
+                if (memoryGobbler != null && memoryGobbler.getMemoryUsage() > 0) {
+                    long usage = memoryGobbler.getMemoryUsage() / 1024;
+                    UI.write("[Memory] " + memoryGobbler.getClass().getSimpleName() + " " + usage + " kb");
+                }
             }
         }
     }

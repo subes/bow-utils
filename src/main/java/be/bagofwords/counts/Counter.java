@@ -2,7 +2,7 @@ package be.bagofwords.counts;
 
 import be.bagofwords.ui.UI;
 import be.bagofwords.util.Pair;
-import org.codehaus.jackson.annotate.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.*;
 import java.util.concurrent.Semaphore;

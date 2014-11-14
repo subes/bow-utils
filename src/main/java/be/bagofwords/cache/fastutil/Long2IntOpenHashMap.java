@@ -157,7 +157,7 @@ public class Long2IntOpenHashMap extends AbstractLong2IntMap implements java.io.
      * and {@link Hash#DEFAULT_LOAD_FACTOR} as load factor.
      */
     public Long2IntOpenHashMap() {
-        this(DEFAULT_INITIAL_SIZE, DEFAULT_LOAD_FACTOR);
+        this(0, DEFAULT_LOAD_FACTOR);
     }
 
 

@@ -148,7 +148,7 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
                         notRelevantThread |= methodName.equals("park") && thisTrace[0].getClassName().equals("Unsafe");
                         notRelevantThread |= inReadNextActionMethod(threadName, thisTrace);
                         Trace parent = null;
-                        String normalizedThreadName = threadName.split("_")[0];
+                        String normalizedThreadName = threadName.replaceAll("[^A-Za-z]", "");
                         for (int i = thisTrace.length - 1; i >= 0; i--) {
                             StackTraceElement element = thisTrace[i];
                             Trace trace = new Trace(normalizedThreadName, element.getClassName() + "." + element.getMethodName() + "(" + element.getFileName() + ":" + element.getLineNumber() + ")", parent);

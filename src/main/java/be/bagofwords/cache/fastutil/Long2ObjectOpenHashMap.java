@@ -152,7 +152,7 @@ public class Long2ObjectOpenHashMap<V> extends AbstractLong2ObjectMap<V> impleme
      * and {@link Hash#DEFAULT_LOAD_FACTOR} as load factor.
      */
     public Long2ObjectOpenHashMap() {
-        this(DEFAULT_INITIAL_SIZE, DEFAULT_LOAD_FACTOR);
+        this(0, DEFAULT_LOAD_FACTOR);
     }
 
 

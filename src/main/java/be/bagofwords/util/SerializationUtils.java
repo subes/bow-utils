@@ -1,8 +1,8 @@
 package be.bagofwords.util;
 
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
-import org.codehaus.jackson.type.JavaType;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.xerial.snappy.Snappy;
 
 import java.io.IOException;
@@ -24,7 +24,7 @@ public class SerializationUtils {
     private static final ObjectMapper defaultObjectMapper = new ObjectMapper();
 
     static {
-        prettyPrintObjectMapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
+        prettyPrintObjectMapper.enable(SerializationFeature.INDENT_OUTPUT);
         try {
             STRING_NULL = "xyNUlLxy".getBytes(ENCODING);
         } catch (UnsupportedEncodingException e) {

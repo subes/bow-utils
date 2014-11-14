@@ -3,22 +3,22 @@ package be.bagofwords.cache;
 import be.bagofwords.cache.fastutil.*;
 import be.bagofwords.util.KeyValue;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.Iterator;
 
 /**
  * Created by Koen Deschacht (koendeschacht@gmail.com) on 27/10/14.
  */
 public class DynamicMap<T> {
 
-    private final LongMap<T> values;
+    private LongMap<T> values;
     private final T nullValue;
+    private final Class<? extends T> objectClass;
 
 
     public DynamicMap(Class<? extends T> objectClass) {
         this.values = createMap(objectClass);
         this.nullValue = getNullValueForType(objectClass);
+        this.objectClass = objectClass;
     }
 
     private LongMap<T> createMap(Class<? extends T> objectClass) {
@@ -78,25 +78,29 @@ public class DynamicMap<T> {
         return values.size();
     }
 
-    public List<KeyValue<T>> getAllValues() {
-        Set<LongMap.Entry<T>> entries = values.entrySet();
-        List<KeyValue<T>> allValues = new ArrayList<>();
-        for (LongMap.Entry<T> entry : entries) {
-            T value = entry.getValue();
-            if (value.equals(nullValue)) {
-                value = null;
+    public Iterator<Long> keyIterator() {
+        return values.keySet().iterator();
+    }
+
+    public Iterator<KeyValue<T>> iterator() {
+        Iterator<LongMap.Entry<T>> entries = values.entrySet().iterator();
+        return new Iterator<KeyValue<T>>() {
+            @Override
+            public boolean hasNext() {
+                return entries.hasNext();
             }
-            allValues.add(new KeyValue<T>(entry.getKey(), value));
-        }
-        return allValues;
-    }
 
-    public List<KeyValue<T>> removeAllValues() {
-        List<KeyValue<T>> allValues = getAllValues();
-        values.clear();
-        return allValues;
+            @Override
+            public KeyValue<T> next() {
+                LongMap.Entry<T> entry = entries.next();
+                T value = entry.getValue();
+                if (value.equals(nullValue)) {
+                    value = null;
+                }
+                return new KeyValue<>(entry.getKey(), value);
+            }
+        };
     }
-
 
     public void clear() {
         values.clear();

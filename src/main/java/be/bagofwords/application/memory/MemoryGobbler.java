@@ -9,6 +9,6 @@ public interface MemoryGobbler {
 
     void freeMemory();
 
-    String getMemoryUsage();
+    long getMemoryUsage();
 
 }
