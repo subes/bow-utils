@@ -16,25 +16,25 @@ public class HashUtils {
     }
 
     public static long hashCode(String s) {
-        return appendHashCode(startHash, s);
+        return append(startHash, s);
     }
 
     public static long hashCode(String... strings) {
         long hash = startHash;
         for (String s : strings) {
-            hash = appendHashCode(hash, s);
+            hash = append(hash, s);
         }
         return hash;
     }
 
-    public static long appendHashCode(long hash, String s) {
+    public static long append(long hash, String s) {
         for (int pos = 0; pos < s.length(); pos++) {
             hash = hash * addHash + s.charAt(pos);
         }
         return hash;
     }
 
-    public static long appendHashCode(long hash, SimpleString word) {
+    public static long append(long hash, SimpleString word) {
         for (int pos = word.getStart(); pos < word.getEnd(); pos++) {
             hash = hash * addHash + word.getOrigText().charAt(pos);
         }
@@ -42,7 +42,7 @@ public class HashUtils {
     }
 
     public static long hashCode(SimpleString targetWord) {
-        return appendHashCode(startHash, targetWord);
+        return append(startHash, targetWord);
     }
 
     public static long randomDistributeHash(long hash) {

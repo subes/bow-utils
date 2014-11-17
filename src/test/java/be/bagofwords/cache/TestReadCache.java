@@ -1,7 +1,7 @@
 package be.bagofwords.cache;
 
+import be.bagofwords.application.BowTaskScheduler;
 import be.bagofwords.application.memory.MemoryManager;
-import be.bagofwords.ui.UI;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -18,7 +18,8 @@ public class TestReadCache {
         Random random = new Random();
         char[] randomString = createRandomString(random);
         MemoryManager freeMemoryManager = new MemoryManager();
-        CachesManager cachesManager = new CachesManager(freeMemoryManager);
+        BowTaskScheduler taskScheduler = new BowTaskScheduler();
+        CachesManager cachesManager = new CachesManager(freeMemoryManager, taskScheduler);
         ReadCache<String> firstReadCache = cachesManager.createNewCache("test", String.class);
         for (int i = 0; i < numOfValues; i++) {
             firstReadCache.put(random.nextLong(), new String(randomString));
@@ -38,6 +39,7 @@ public class TestReadCache {
         Assert.assertEquals(0, firstReadCache.size());
         cachesManager.createNewCache("unused_cache", Long.class); //just to make sure that the caches manager is not garbage collected before the end of the test
         freeMemoryManager.terminate();
+        taskScheduler.terminate();
     }
 
     private char[] createRandomString(Random random) {

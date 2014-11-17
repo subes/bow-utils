@@ -126,6 +126,7 @@ public class MemoryManager implements CloseableComponent, StatusViewable {
                         if (memoryStatus == MemoryStatus.CRITICAL) {
                             printMemoryUsage(currGobblers);
                         }
+                        UI.write("Will free some memory, current status is " + memoryStatus);
                         freeMemory(currGobblers);
                         memoryStatus = MemoryStatus.FREE;
                         System.gc();
@@ -196,12 +197,12 @@ public class MemoryManager implements CloseableComponent, StatusViewable {
 
     private void freeMemory(List<WeakReference<MemoryGobbler>> currGobblers) {
         numberOfMemoryFrees.addCount();
-        for (WeakReference<MemoryGobbler> reference : currGobblers) {
+        currGobblers.parallelStream().forEach(reference -> {
             MemoryGobbler memoryGobbler = reference.get();
             if (memoryGobbler != null) {
                 memoryGobbler.freeMemory();
             }
-        }
+        });
     }
 
     private MemoryStatus findStatus(long used, long max) {
@@ -213,6 +214,10 @@ public class MemoryManager implements CloseableComponent, StatusViewable {
             }
         }
         return MemoryStatus.FREE;
+    }
+
+    public long getAvailableMemoryInBytes() {
+        return Runtime.getRuntime().maxMemory();
     }
 
 }

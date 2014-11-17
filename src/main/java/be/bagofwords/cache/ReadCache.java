@@ -1,5 +1,6 @@
 package be.bagofwords.cache;
 
+import be.bagofwords.ui.UI;
 import be.bagofwords.util.KeyValue;
 
 import java.util.Iterator;
@@ -47,17 +48,35 @@ public class ReadCache<T> {
 
     public void put(long key, T value) {
         int segmentInd = getSegmentInd(key);
-        boolean lock = tryLockWrite(segmentInd);
-        if (lock) {
-            newCachedObjects[segmentInd].put(key, value);
-            long currSize = newCachedObjects[segmentInd].size();
-            if (currSize > cachedObjects[segmentInd].size() / 4) {
-                newCachedObjects[segmentInd].putAll(cachedObjects[segmentInd]);
-                cachedObjects[segmentInd] = newCachedObjects[segmentInd];
+        lockWrite(segmentInd);
+        newCachedObjects[segmentInd].put(key, value);
+        unlockWrite(segmentInd);
+    }
+
+    public void updateCachedObjects() {
+        int numUpdated = 0;
+        int size = 0;
+        for (int segmentInd = 0; segmentInd < NUMBER_OF_SEGMENTS; segmentInd++) {
+            if (newCachedObjects[segmentInd].size() > 0) {
+                numUpdated += newCachedObjects[segmentInd].size();
+                lockWrite(segmentInd);
+                DynamicMap<T> currNewCachedObjects = newCachedObjects[segmentInd];
                 newCachedObjects[segmentInd] = new DynamicMap<>(objectClass);
+                unlockWrite(segmentInd);
+                cachedObjects[segmentInd] = merge(cachedObjects[segmentInd], currNewCachedObjects);
             }
-            unlockWrite(segmentInd);
+            size += cachedObjects[segmentInd].size();
         }
+//        if (numUpdated > 0) {
+//            UI.write("Added " + numUpdated + " values to cache " + getName() + " new size is " + size);
+//        }
+    }
+
+    private DynamicMap<T> merge(DynamicMap<T> cachedObjects, DynamicMap<T> newCachedObjects) {
+        DynamicMap<T> updatedCachedObjects = new DynamicMap<>(objectClass, Math.max(cachedObjects.size(), newCachedObjects.size()));
+        updatedCachedObjects.putAll(cachedObjects);
+        updatedCachedObjects.putAll(newCachedObjects);
+        return updatedCachedObjects;
     }
 
     public void clear() {

@@ -12,26 +12,27 @@ public class DynamicMap<T> {
 
     private LongMap<T> values;
     private final T nullValue;
-    private final Class<? extends T> objectClass;
 
-
-    public DynamicMap(Class<? extends T> objectClass) {
-        this.values = createMap(objectClass);
+    public DynamicMap(Class<? extends T> objectClass, int initialSize) {
+        this.values = createMap(objectClass, initialSize);
         this.nullValue = getNullValueForType(objectClass);
-        this.objectClass = objectClass;
     }
 
-    private LongMap<T> createMap(Class<? extends T> objectClass) {
+    public DynamicMap(Class<? extends T> objectClass) {
+        this(objectClass, 0);
+    }
+
+    private LongMap<T> createMap(Class<? extends T> objectClass, int initialSize) {
         if (objectClass == Long.class) {
-            return (LongMap) new Long2LongOpenHashMap();
+            return (LongMap) new Long2LongOpenHashMap(initialSize);
         } else if (objectClass == Integer.class) {
-            return (LongMap) new Long2IntOpenHashMap();
+            return (LongMap) new Long2IntOpenHashMap(initialSize);
         } else if (objectClass == Float.class) {
-            return (LongMap) new Long2FloatOpenHashMap();
+            return (LongMap) new Long2FloatOpenHashMap(initialSize);
         } else if (objectClass == Double.class) {
-            return (LongMap) new Long2DoubleOpenHashMap();
+            return (LongMap) new Long2DoubleOpenHashMap(initialSize);
         } else {
-            return new Long2ObjectOpenHashMap();
+            return new Long2ObjectOpenHashMap(initialSize);
         }
     }
 
@@ -74,7 +75,7 @@ public class DynamicMap<T> {
         values.remove(key);
     }
 
-    public long size() {
+    public int size() {
         return values.size();
     }
 

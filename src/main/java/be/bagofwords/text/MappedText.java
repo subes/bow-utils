@@ -117,8 +117,12 @@ public class MappedText implements Serializable, Text {
     }
 
     public Pair<Integer, Integer> getMappingFromOrig(int startPos, int endPos) {
+        endPos = endPos - 1; //make end inclusive
         int origStart = getInverseMapping(startPos);
         int origEnd = getInverseMapping(endPos);
+        if (origEnd != -1) {
+            origEnd++; //make end non-inclusive again
+        }
         return new Pair<>(origStart, origEnd);
     }
 

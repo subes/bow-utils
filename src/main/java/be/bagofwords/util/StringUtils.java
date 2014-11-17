@@ -689,6 +689,11 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
         return suffix.substring(Math.max(0, suffix.length() - length));
     }
 
+    public static String getPrefix(String word, int length, int reductionLevel) {
+        String reducedWord = StringUtils.reduceCharacterDiversityLevel(reductionLevel, word);
+        return reducedWord.substring(0, Math.min(reducedWord.length(), length));
+    }
+
     public static String getSuffix(SimpleString word, int length, int reductionLevel) {
         return getSuffix(word.getS(), length, reductionLevel);
     }
