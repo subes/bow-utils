@@ -1,6 +1,5 @@
 package be.bagofwords.cache;
 
-import be.bagofwords.ui.UI;
 import be.bagofwords.util.KeyValue;
 
 import java.util.Iterator;

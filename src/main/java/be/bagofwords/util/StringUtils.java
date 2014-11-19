@@ -697,4 +697,23 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
     public static String getSuffix(SimpleString word, int length, int reductionLevel) {
         return getSuffix(word.getS(), length, reductionLevel);
     }
+
+    public static String cleanForPrint(String input) {
+        StringBuilder result = new StringBuilder();
+        String[] lines = input.split("\n");
+        int numOfEmptyLines = 0;
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            line = line.trim();
+            if (line.length() == 0) {
+                numOfEmptyLines++;
+            } else {
+                numOfEmptyLines = 0;
+            }
+            if (numOfEmptyLines <= 1) {
+                result.append(line);
+            }
+        }
+        return result.toString();
+    }
 }

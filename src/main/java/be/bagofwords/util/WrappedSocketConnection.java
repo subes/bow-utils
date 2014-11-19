@@ -2,6 +2,7 @@ package be.bagofwords.util;
 
 import be.bagofwords.application.BaseServer;
 import be.bagofwords.ui.UI;
+import org.xerial.snappy.Snappy;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -137,22 +138,31 @@ public class WrappedSocketConnection implements Closeable {
 
     public <T> T readValue(Class<T> objectClass) throws IOException {
         int length = SerializationUtils.getWidth(objectClass);
+        boolean isCompressed = false;
         if (length < 0) {
             length = readInt();
+            if (length < 0) {
+                //large objects are automatically compressed
+                isCompressed = true;
+                length = -length;
+            }
         }
-        byte[] value = new byte[length];
-        int numOfBytesRead = is.read(value);
+        byte[] objectAsBytes = new byte[length];
+        int numOfBytesRead = is.read(objectAsBytes);
         while (numOfBytesRead < length) {
-            int extraBytesRead = is.read(value, numOfBytesRead, value.length - numOfBytesRead);
+            int extraBytesRead = is.read(objectAsBytes, numOfBytesRead, objectAsBytes.length - numOfBytesRead);
             if (extraBytesRead == -1) {
                 throw new RuntimeException("Expected to read " + length + " bytes and received " + numOfBytesRead + " bytes");
             }
             numOfBytesRead += extraBytesRead;
         }
         if (debug) {
-            UI.write("RI <-- " + value.length + " bytes");
+            UI.write("RI <-- " + objectAsBytes.length + " bytes");
         }
-        T result = SerializationUtils.bytesToObjectCheckForNull(value, objectClass);
+        if (isCompressed) {
+            objectAsBytes = Snappy.uncompress(objectAsBytes);
+        }
+        T result = SerializationUtils.bytesToObjectCheckForNull(objectAsBytes, objectClass);
         return result;
     }
 
@@ -165,7 +175,13 @@ public class WrappedSocketConnection implements Closeable {
         int width = SerializationUtils.getWidth(objectClass);
         if (width == -1) {
             //not a fixed length object
-            writeInt(objectAsBytes.length);
+            if (objectAsBytes.length > 1024 * 1024) {
+                //compress large object
+                objectAsBytes = Snappy.compress(objectAsBytes);
+                writeInt(-objectAsBytes.length);
+            } else {
+                writeInt(objectAsBytes.length);
+            }
         }
         if (debug) {
             UI.write("RI --> " + objectAsBytes.length + " bytes");
