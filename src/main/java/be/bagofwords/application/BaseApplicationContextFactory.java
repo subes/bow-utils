@@ -13,11 +13,20 @@ public abstract class BaseApplicationContextFactory implements ApplicationContex
 
     private AnnotationConfigApplicationContext applicationContext;
     private List<Object> singletons;
+    private MainClass mainClass;
+
+    protected BaseApplicationContextFactory(MainClass mainClass) {
+        this.mainClass = mainClass;
+        setSaneDefaultsForLog4J();
+        this.applicationContext = new AnnotationConfigApplicationContext();
+        this.singletons = new ArrayList<>();
+        if (mainClass != null) {
+            singleton("mainClass", mainClass);
+        }
+    }
 
     protected BaseApplicationContextFactory() {
-        setSaneDefaultsForLog4J();
-        applicationContext = new AnnotationConfigApplicationContext();
-        singletons = new ArrayList<>();
+        this(null);
     }
 
     protected BaseApplicationContextFactory resourceResolver(ResourcePatternResolver resourcePatternResolver) {
@@ -67,7 +76,11 @@ public abstract class BaseApplicationContextFactory implements ApplicationContex
 
     @Override
     public String getApplicationName() {
-        return "";
+        if (mainClass != null) {
+            return mainClass.getClass().getSimpleName();
+        } else {
+            return "";
+        }
     }
 
     private static void setSaneDefaultsForLog4J() {
