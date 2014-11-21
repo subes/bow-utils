@@ -1,7 +1,7 @@
 package be.bagofwords.util;
 
 
-import be.bagofwords.text.SimpleString;
+import be.bagofwords.text.BowString;
 
 public class HashUtils {
 
@@ -34,14 +34,14 @@ public class HashUtils {
         return hash;
     }
 
-    public static long append(long hash, SimpleString word) {
+    public static long append(long hash, BowString word) {
         for (int pos = word.getStart(); pos < word.getEnd(); pos++) {
-            hash = hash * addHash + word.getOrigText().charAt(pos);
+            hash = hash * addHash + word.getTextS().charAt(pos);
         }
         return hash;
     }
 
-    public static long hashCode(SimpleString targetWord) {
+    public static long hashCode(BowString targetWord) {
         return append(startHash, targetWord);
     }
 

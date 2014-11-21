@@ -519,7 +519,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
         return namePattern.matcher(ngram).matches();
     }
 
-    public static String reduceCharacterDiversityLevel1(SimpleString word) {
+    public static String reduceCharacterDiversityLevel1(BowString word) {
         return reduceCharacterDiversityLevel1(word.getS());
     }
 
@@ -547,7 +547,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
         return removeAccents(reduceCharacterDiversityLevel1(word));
     }
 
-    public static String reduceCharacterDiversityLevel2(SimpleString word) {
+    public static String reduceCharacterDiversityLevel2(BowString word) {
         return reduceCharacterDiversityLevel2(word.getS());
     }
 
@@ -635,8 +635,8 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
         return false;
     }
 
-    public static List<SimpleString> splitInWords(String text, Set<String> wordsWithPunct) {
-        List<SimpleString> result = new ArrayList<>();
+    public static List<BowString> splitInWords(String text, Set<String> wordsWithPunct) {
+        List<BowString> result = new ArrayList<>();
         WordIterator wordIterator = new WordIterator(text, wordsWithPunct);
         while (wordIterator.hasNext()) {
             result.add(wordIterator.next());
@@ -644,10 +644,10 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
         return result;
     }
 
-    public static String createStringContext(SimpleString ex, int length) {
-        String bf = ex.getOrigText().substring(Math.max(0, ex.getStart() - length), ex.getStart());
-        String er = "**" + ex.getOrigText().substring(ex.getStart(), ex.getEnd()) + "**";
-        String af = ex.getOrigText().substring(ex.getEnd(), Math.min(ex.getOrigText().length(), ex.getEnd() + length));
+    public static String createStringContext(BowString ex, int length) {
+        String bf = ex.getTextS().substring(Math.max(0, ex.getStart() - length), ex.getStart());
+        String er = "**" + ex.getTextS().substring(ex.getStart(), ex.getEnd()) + "**";
+        String af = ex.getTextS().substring(ex.getEnd(), Math.min(ex.getTextS().length(), ex.getEnd() + length));
         String result = bf + er + af;
         result = result.replaceAll("\n", " ").replaceAll("\t", " ");
         while (result.contains("  ")) {
@@ -656,15 +656,15 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
         return result;
     }
 
-    public static ExtendedString getPrevWord(SimpleString err, Set<String> wordsWithPunctuation) {
-        return WordIterator.findWord(err.getOrigText(), err.getStart(), Direction.Left, wordsWithPunctuation);
+    public static BowStringImpl getPrevWord(BowString err, Set<String> wordsWithPunctuation) {
+        return WordIterator.findWord(err.getText(), err.getStart(), Direction.Left, wordsWithPunctuation);
     }
 
-    public static ExtendedString getNextWord(SimpleString err, Set<String> wordsWithPunctuation) {
-        return WordIterator.findWord(err.getOrigText(), err.getEnd(), Direction.Right, wordsWithPunctuation);
+    public static BowStringImpl getNextWord(BowString err, Set<String> wordsWithPunctuation) {
+        return WordIterator.findWord(err.getText(), err.getEnd(), Direction.Right, wordsWithPunctuation);
     }
 
-    public static String getLastNgram(SimpleString example, int length) {
+    public static String getLastNgram(BowString example, int length) {
         String tagS = example.getS();
         while (tagS.length() < length) {
             tagS += " ";
@@ -672,7 +672,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
         return tagS.substring(tagS.length() - length);
     }
 
-    public static String getFirstNgram(SimpleString example, int length) {
+    public static String getFirstNgram(BowString example, int length) {
         String tagS = example.getS();
         while (tagS.length() < length) {
             tagS = " " + tagS;
@@ -694,7 +694,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
         return reducedWord.substring(0, Math.min(reducedWord.length(), length));
     }
 
-    public static String getSuffix(SimpleString word, int length, int reductionLevel) {
+    public static String getSuffix(BowString word, int length, int reductionLevel) {
         return getSuffix(word.getS(), length, reductionLevel);
     }
 

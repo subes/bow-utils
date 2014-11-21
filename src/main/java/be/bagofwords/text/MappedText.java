@@ -102,7 +102,7 @@ public class MappedText implements Serializable, Text {
         return -1;
     }
 
-    public Pair<Integer, Integer> getMappingToOrig(SimpleString string) {
+    public Pair<Integer, Integer> getMappingToOrig(BowString string) {
         return getMappingToOrig(string.getStart(), string.getEnd());
     }
 

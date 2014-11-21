@@ -14,13 +14,16 @@ public class WordIterator {
 
     private static final char FULL_STOP = '.';
 
-    private ExtendedString nextWord;
+    private BowStringImpl nextWord;
     private int pos;
-    private final String text;
+    private final Text text;
     private final Set<String> wordsWithPunct;
 
-
     public WordIterator(String text, Set<String> wordsWithPunct) {
+        this(new TransientText(text), wordsWithPunct);
+    }
+
+    public WordIterator(Text text, Set<String> wordsWithPunct) {
         this.text = text;
         this.pos = 0;
         this.wordsWithPunct = wordsWithPunct;
@@ -34,8 +37,8 @@ public class WordIterator {
         }
     }
 
-    public static ExtendedString findWord(String text, int startOfSearch, Direction direction, Set<String> wordsWithPunct) {
-        ExtendedString nextWord = findWord(text, startOfSearch, direction, true);
+    public static BowStringImpl findWord(Text text, int startOfSearch, Direction direction, Set<String> wordsWithPunct) {
+        BowStringImpl nextWord = findWord(text, startOfSearch, direction, true);
         if (nextWord != null && containsNonLetterOrNumber(nextWord)) {
             if (wordsWithPunct.contains(nextWord.toString())) {
                 return nextWord;
@@ -47,7 +50,7 @@ public class WordIterator {
     }
 
 
-    private static boolean containsNonLetterOrNumber(ExtendedString nextWord) {
+    private static boolean containsNonLetterOrNumber(BowStringImpl nextWord) {
         for (int i = 0; i < nextWord.length(); i++) {
             if (!Character.isLetterOrDigit(nextWord.charAt(i))) {
                 return true;
@@ -56,7 +59,7 @@ public class WordIterator {
         return false;
     }
 
-    public static ExtendedString findWord(String text, int startOfSearch, Direction direction, boolean allowPossibleWordChars) {
+    public static BowStringImpl findWord(Text text, int startOfSearch, Direction direction, boolean allowPossibleWordChars) {
         int pos = startOfSearch;
         if (direction == Direction.Right) {
             while (pos < text.length() && isNonWordChar(text.charAt(pos), false)) {
@@ -67,7 +70,7 @@ public class WordIterator {
                 pos++;
             }
             if (start < pos) {
-                ExtendedString result = new ExtendedString(text, start, pos);
+                BowStringImpl result = new BowStringImpl(text, start, pos);
                 return result;
             } else
                 return null;
@@ -81,7 +84,7 @@ public class WordIterator {
                 pos--;
             }
             if (start > pos)
-                return new ExtendedString(text, pos + 1, start + 1);
+                return new BowStringImpl(text, pos + 1, start + 1);
             else
                 return null;
         }
@@ -99,8 +102,8 @@ public class WordIterator {
         return nextWord != null;
     }
 
-    public ExtendedString next() {
-        ExtendedString result = nextWord;
+    public BowStringImpl next() {
+        BowStringImpl result = nextWord;
         findNextWord();
         return result;
     }

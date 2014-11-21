@@ -4,7 +4,7 @@ package be.bagofwords.text;
  * String that exposes the underlying text from where the string originated
  */
 
-public interface SimpleString {
+public interface BowString {
 
     int getStart();
 
@@ -12,6 +12,10 @@ public interface SimpleString {
 
     String getS();
 
-    String getOrigText();
+    Text getText();
+
+    default String getTextS() {
+        return getText().getText();
+    }
 
 }
