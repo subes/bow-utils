@@ -53,8 +53,13 @@ public abstract class SafeThread extends Thread implements CloseableComponent {
 
     public void waitForFinish(long timeToWait) {
         long start = System.currentTimeMillis();
+        long timeOfLastMessage = start;
         while (!isFinished() && (timeToWait == -1 || System.currentTimeMillis() - start < timeToWait)) {
             Utils.threadSleep(10);
+            if (System.currentTimeMillis() - timeOfLastMessage > 10 * 1000 && isTerminateRequested()) {
+                UI.write("Waiting for thread " + getName() + " to finish");
+                timeOfLastMessage = System.currentTimeMillis();
+            }
         }
     }
 
