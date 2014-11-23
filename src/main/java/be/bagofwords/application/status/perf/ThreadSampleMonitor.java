@@ -147,20 +147,13 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
                         notRelevantThread |= threadName.equals("ChangedValueListener") && methodName.equals("socketRead0");
                         notRelevantThread |= methodName.equals("park") && thisTrace[0].getClassName().equals("Unsafe");
                         notRelevantThread |= inReadNextActionMethod(threadName, thisTrace);
-                        Trace parent = null;
                         String normalizedThreadName = threadName.replaceAll("[^A-Za-z]", "");
+                        Trace parent = new Trace(normalizedThreadName, null);
+                        addTrace(notRelevantThread, parent);
                         for (int i = thisTrace.length - 1; i >= 0; i--) {
                             StackTraceElement element = thisTrace[i];
-                            Trace trace = new Trace(normalizedThreadName, element.getClassName() + "." + element.getMethodName() + "(" + element.getFileName() + ":" + element.getLineNumber() + ")", parent);
-                            if (notRelevantThread) {
-                                synchronized (lessRelevantTracesCounter) {
-                                    lessRelevantTracesCounter.inc(trace);
-                                }
-                            } else {
-                                synchronized (relevantTracesCounter) {
-                                    relevantTracesCounter.inc(trace);
-                                }
-                            }
+                            Trace trace = new Trace(element.getClassName() + "." + element.getMethodName() + "(" + element.getFileName() + ":" + element.getLineNumber() + ")", parent);
+                            addTrace(notRelevantThread, trace);
                             parent = trace;
                         }
                     }
@@ -172,6 +165,18 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
                     lessRelevantTracesCounter.trim(MAX_NUM_OF_SAMPLES / 2);
                 }
                 Utils.threadSleep(200);
+            }
+        }
+
+        private void addTrace(boolean notRelevantThread, Trace trace) {
+            if (notRelevantThread) {
+                synchronized (lessRelevantTracesCounter) {
+                    lessRelevantTracesCounter.inc(trace);
+                }
+            } else {
+                synchronized (relevantTracesCounter) {
+                    relevantTracesCounter.inc(trace);
+                }
             }
         }
 

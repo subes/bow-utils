@@ -15,8 +15,7 @@ public class ThreadSamplesPrinter {
         for (int i = 0; i < sortedTraces.size(); i++) {
             Trace parentTrace = sortedTraces.get(i);
             if (parentTrace.getParent() == null) {
-                result.append("THREAD " + parentTrace.getThreadName() + "\n");
-                printTrace(0, "  ", result, parentTrace, traces, sortedTraces, false, numOfSamples);
+                printTrace(0, "", result, parentTrace, traces, sortedTraces, false, numOfSamples);
                 result.append("\n");
             }
         }
@@ -27,7 +26,11 @@ public class ThreadSamplesPrinter {
         if (fraction > MIN_FRACTION) {
             String indentation = combinedIndentation + (printHorizontalLine ? "\\" : " ");
             int numOfChildren = countNumberOfChildren(parentTrace, traces, sortedTraces, numOfSamples);
-            result.append(indentation + NumUtils.makeNicePercent(fraction) + "% " + parentTrace.getLine() + "\n");
+            String line = parentTrace.getLine();
+            if (level == 0) {
+                line = "THREAD " + line.toUpperCase();
+            }
+            result.append(indentation + NumUtils.makeNicePercent(fraction) + "% " + line + "\n");
             //Add subtraces
             int numOfChildrenPrinted = 0;
             for (Trace subtrace : sortedTraces) {
