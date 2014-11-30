@@ -1,8 +1,6 @@
 package be.bagofwords.text;
 
-public interface Text {
-
-    public String getId();
+public interface Text extends SequentialData {
 
     public String getText();
 
@@ -17,4 +15,14 @@ public interface Text {
     default String substring(int start, int end) {
         return getText().substring(start, end);
     }
+
+    default String substring(int start) {
+        return getText().substring(start);
+    }
+
+    @Override
+    default int size() {
+        return length();
+    }
+
 }
