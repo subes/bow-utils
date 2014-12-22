@@ -1,6 +1,7 @@
 package be.bagofwords.iterator;
 
 import be.bagofwords.ui.UI;
+import be.bagofwords.util.Utils;
 
 import java.io.Closeable;
 import java.util.Iterator;
@@ -8,11 +9,10 @@ import java.util.Iterator;
 public abstract class CloseableIterator<T extends Object> implements Iterator<T>, Closeable {
 
     private boolean wasClosed = false;
-    private final String creatingMethod;
+    private final StackTraceElement[] creatingStackTrace;
 
     public CloseableIterator() {
-        StackTraceElement callingMethod = Thread.currentThread().getStackTrace()[2];
-        creatingMethod = callingMethod.getFileName() + ":" + callingMethod.getLineNumber();
+        creatingStackTrace = Thread.currentThread().getStackTrace(); //we want to keep track what methods do not close the iterator
     }
 
     @Override
@@ -37,7 +37,7 @@ public abstract class CloseableIterator<T extends Object> implements Iterator<T>
     protected void finalize() throws Throwable {
         super.finalize();
         if (!wasClosed) {
-            UI.writeError("CloseableIterator was not closed! Was created in " + creatingMethod);
+            UI.writeError("CloseableIterator was not closed! Was created in " + Utils.getStackTrace(creatingStackTrace));
             close();
         }
     }

@@ -7,6 +7,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.stream.Stream;
 
 public class Utils {
 
@@ -198,6 +199,47 @@ public class Utils {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static String getStackTrace(StackTraceElement[] stackTrace) {
+        String result = "";
+        for (int i = stackTrace.length - 1; i >= 0; i--) {
+            StackTraceElement element = stackTrace[i];
+            result += element.getClassName() + "." + element.getMethodName() + "(" + element.getFileName() + ":" + element.getLineNumber() + ")";
+            if (i > 0) {
+                result += "\n";
+            }
+        }
+        return result;
+    }
+
+    public static <T> Stream<T> fasterParallelStream(Collection<T> items) {
+        return splitListInSublists(items).parallelStream().flatMap(sublist -> sublist.stream());
+    }
+
+    private static <T> List<List<T>> splitListInSublists(Collection<T> values) {
+        List<List<T>> sublists = new ArrayList<>();
+        for (int i = 0; i < Runtime.getRuntime().availableProcessors() * 10; i++) {
+            sublists.add(new ArrayList<>());
+        }
+        int ind = 0;
+        for (T value : values) {
+            sublists.get(ind % sublists.size()).add(value);
+            ind++;
+        }
+        return sublists;
+    }
+
+    public static void noException(Action action) {
+        try {
+            action.run();
+        } catch (Exception ex) {
+            throw new RuntimeException("Unexpected exception", ex);
+        }
+    }
+
+    public static interface Action {
+        public void run() throws Exception;
     }
 
 }
