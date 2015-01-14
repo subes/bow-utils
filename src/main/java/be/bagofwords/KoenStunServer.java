@@ -1,5 +1,6 @@
 package be.bagofwords;
 
+import be.bagofwords.ui.UI;
 import be.bagofwords.util.WrappedSocketConnection;
 
 import java.io.IOException;
@@ -18,10 +19,12 @@ public class KoenStunServer {
             Socket clientSocket = serverSocket.accept();
             WrappedSocketConnection wrappedSocketConnection = new WrappedSocketConnection(clientSocket);
             InetAddress inetAddress = clientSocket.getInetAddress();
-            System.out.println("Client address=" + inetAddress.getHostAddress() + " port=" + clientSocket.getPort() + " local_port=" + clientSocket.getLocalPort());
+            UI.write("Client address=" + inetAddress.getHostAddress() + " port=" + clientSocket.getPort() + " local_port=" + clientSocket.getLocalPort());
             wrappedSocketConnection.writeString(inetAddress.getHostAddress());
             wrappedSocketConnection.writeInt(clientSocket.getPort());
-            clientSocket.close();
+            wrappedSocketConnection.flush();
+            wrappedSocketConnection.readBoolean();
+            wrappedSocketConnection.close();
         }
     }
 
