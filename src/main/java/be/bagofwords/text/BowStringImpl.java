@@ -33,8 +33,9 @@ public class BowStringImpl implements CharSequence, Comparable<BowStringImpl>, B
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof BowStringImpl) {
-            return getS().equals(((BowStringImpl) obj).getS());
+        if (obj instanceof BowString) {
+            BowString other = (BowString) obj;
+            return getText().getId().equals(other.getText().getId()) && getStart() == other.getStart() && getEnd() == other.getEnd();
         } else {
             return obj instanceof String && getS().equals(obj);
         }

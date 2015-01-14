@@ -6,7 +6,6 @@ import be.bagofwords.util.Utils;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
 
 public abstract class UI {
@@ -16,8 +15,6 @@ public abstract class UI {
     private static UI object;
 
     private SimpleDateFormat printTimeFormat = new SimpleDateFormat("HH:mm:ss:SSS");
-
-    public static final boolean printCaller = false;
 
     public static final boolean printTime = true;
 
@@ -84,8 +81,6 @@ public abstract class UI {
     public void write(Priority priority, String msg) {
         if (print(priority)) {
             if (prevNewLine) {
-                if (printCaller)
-                    msg = callingClass() + msg;
                 if (printTime)
                     msg = getTime() + " " + msg;
                 if (printMemory)
@@ -115,34 +110,6 @@ public abstract class UI {
 
     private String getTime() {
         return printTimeFormat.format(new Date());
-    }
-
-    //Keep in alphabetical order!
-    private final String[] mainMethodNames = {"main", "run"};
-    private final String[] methodNamesToIgnore = {"doAction", "doOccasionalAction", "trackProgress"};
-
-    private String callingClass() {
-        StackTraceElement[] els = Thread.currentThread().getStackTrace();
-        int ind = 0;
-        while (Arrays.binarySearch(mainMethodNames, els[ind].getMethodName()) < 0) {
-            ind++;
-        }
-        String stopAt = UI.class.getCanonicalName();
-        String result = "";
-        String prevClass = "";
-        while (!els[ind].getClassName().equals(stopAt)) {
-            if (Arrays.binarySearch(methodNamesToIgnore, els[ind].getMethodName()) < 0) {
-                String className = "-";
-                if (!els[ind].getClassName().equals(prevClass)) {
-                    prevClass = els[ind].getClassName();
-                    int start = prevClass.lastIndexOf(".");
-                    className = prevClass.substring(start + 1);
-                }
-                result += className + ":" + els[ind].getMethodName() + ":" + els[ind].getLineNumber() + "  ";
-            }
-            ind--;
-        }
-        return result;
     }
 
     public static String read() {
@@ -246,7 +213,7 @@ public abstract class UI {
                 getInstance().writeLn(NORMAL, "Please enter a valid integer");
             }
         }
-    }   
+    }
 
     public static double readDouble(String msg) {
         while (true) {

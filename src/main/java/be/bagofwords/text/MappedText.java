@@ -106,6 +106,10 @@ public class MappedText implements Serializable, Text {
         return getMappingToOrig(string.getStart(), string.getEnd());
     }
 
+    public Pair<Integer, Integer> getMappingFromOrig(BowString string) {
+        return getMappingFromOrig(string.getStart(), string.getEnd());
+    }
+
     public Pair<Integer, Integer> getMappingToOrig(int startPos, int endPos) {
         endPos = endPos - 1; //make end inclusive
         int mappedStart = startPos < mappingToOrig.length ? mappingToOrig[startPos] : -1;

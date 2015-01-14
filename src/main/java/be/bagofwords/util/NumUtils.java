@@ -214,4 +214,8 @@ public class NumUtils {
         }
         return max;
     }
+
+    public static boolean equal(double first, double second) {
+        return first == second || Math.abs(first - second) < 0.000001 * Math.max(Math.abs(first), Math.abs(second));
+    }
 }

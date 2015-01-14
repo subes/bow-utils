@@ -188,9 +188,13 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
     }
 
     public static void replaceMatches(List<Pair<Integer, Integer>> matches, String repl, MappedText mappedText) {
+        replaceMatches(matches, repl, mappedText, !repl.isEmpty());
+    }
+
+    public static void replaceMatches(List<Pair<Integer, Integer>> matches, String repl, MappedText mappedText, boolean keepWorMapping) {
         List<Match> replacements = new ArrayList<>();
         for (Pair<Integer, Integer> match : matches) {
-            replacements.add(new Match(match.getFirst(), match.getSecond(), repl));
+            replacements.add(new Match(match.getFirst(), match.getSecond(), repl, keepWorMapping));
         }
         replaceMatches(replacements, mappedText);
     }
@@ -278,13 +282,17 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
     }
 
     public static void replaceAll(String regex, String repl, MappedText mappedText) {
+        replaceAll(regex, repl, mappedText, !repl.isEmpty());
+    }
+
+    public static void replaceAll(String regex, String repl, MappedText mappedText, boolean keepMapping) {
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(mappedText.getText());
         ArrayList<Pair<Integer, Integer>> matches = new ArrayList<>();
         while (matcher.find()) {
             matches.add(new Pair<>(matcher.start(), matcher.end()));
         }
-        replaceMatches(matches, repl, mappedText);
+        replaceMatches(matches, repl, mappedText, keepMapping);
     }
 
     public static byte[] convert(String word) {
