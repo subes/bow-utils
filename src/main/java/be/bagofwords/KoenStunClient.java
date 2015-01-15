@@ -17,9 +17,10 @@ import java.util.Random;
  */
 public class KoenStunClient {
 
-    private static final int my_local_port = 9055;
 
     public static void main(String[] args) throws IOException {
+        int my_local_port = Integer.parseInt(args[2]);
+        UI.write("My local port is " + my_local_port);
         DatagramSocket socket = new DatagramSocket(my_local_port);
         Random random = new Random();
         byte[] myData = new byte[]{(byte) random.nextInt(127)};
