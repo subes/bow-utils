@@ -23,13 +23,6 @@ public class KoenStunClient {
         DatagramSocket socket = new DatagramSocket(my_local_port);
         Random random = new Random();
         byte[] myData = new byte[]{(byte) random.nextInt(127)};
-        {
-            UI.write("Sending UDP packet to calvin server");
-            StunInfo stunInfo = getStunInfo(socket, "calvin.x-spell.be", Integer.parseInt(args[1]));
-            String myRemoteAddress = stunInfo.getAddress();
-            int myRemotePort = stunInfo.getPort();
-            UI.write("My remote address is " + myRemoteAddress + " and port is " + myRemotePort);
-        }
 
         UI.write("Sending UDP packet to stun server");
         StunInfo stunInfo = getStunInfo(socket, args[0], Integer.parseInt(args[1]));
