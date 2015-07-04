@@ -242,4 +242,12 @@ public class WrappedSocketConnection implements Closeable {
     public InetAddress getInetAddress() {
         return socket.getInetAddress();
     }
+
+    public int getLocalPort() {
+        return socket.getLocalPort();
+    }
+
+    public int getRemotePort() {
+        return socket.getPort();
+    }
 }

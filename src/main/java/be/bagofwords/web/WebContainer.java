@@ -24,29 +24,39 @@ public class WebContainer implements CloseableComponent, ApplicationListener<Con
     private RouteMatcher routeMatcher;
     private SparkServerThread sparkServerThread;
     private int port;
+    private String staticFolder;
 
     public WebContainer(int port) {
-        initialize(port);
+        this(port, null);
+    }
+
+    public WebContainer(int port, String staticFolder) {
+        initialize(port, staticFolder);
     }
 
     public WebContainer(String applicationName) {
+        this(applicationName, null);
+    }
+
+    public WebContainer(String applicationName, String staticFolder) {
         long hashCode = HashUtils.hashCode(applicationName);
         if (hashCode < 0) {
             hashCode = -hashCode;
         }
         int randomPort = (int) (1023 + (hashCode % (65535 - 1023)));
-        initialize(randomPort);
+        initialize(randomPort, staticFolder);
     }
 
-    private void initialize(int port) {
+    private void initialize(int port, String staticFolder) {
         this.routeMatcher = RouteMatcherFactory.get();
         this.port = port;
+        this.staticFolder = staticFolder;
     }
 
     @Override
     public void onApplicationEvent(ContextStartedEvent contextStartedEvent) {
         registerControllers();
-        sparkServerThread = new SparkServerThread(port);
+        sparkServerThread = new SparkServerThread(port, staticFolder);
         sparkServerThread.start();
     }
 
@@ -76,18 +86,20 @@ public class WebContainer implements CloseableComponent, ApplicationListener<Con
     private static class SparkServerThread extends SafeThread {
 
         private int port;
+        private String staticFolder;
         private SparkServer server;
 
-        private SparkServerThread(int port) {
+        private SparkServerThread(int port, String staticFolder) {
             super("SparkServerThread", true);
             this.port = port;
+            this.staticFolder = staticFolder;
         }
 
         @Override
         protected void runInt() throws Exception {
             try {
-                server = SparkServerFactory.create(false);
-                server.ignite("0.0.0.0", port, null, null, null, null, null, null);
+                server = SparkServerFactory.create(staticFolder != null);
+                server.ignite("0.0.0.0", port, null, null, null, null, null, staticFolder);
             } catch (Exception exp) {
                 UI.writeError("Error while trying to start spark server on port " + port);
                 server = null;
