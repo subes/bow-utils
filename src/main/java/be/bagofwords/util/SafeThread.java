@@ -7,15 +7,18 @@ public abstract class SafeThread extends Thread implements CloseableComponent {
 
     private boolean terminateRequested;
     private boolean finished;
+    private boolean started;
 
     public SafeThread(String name, boolean isDaemonThread) {
         super(name);
         super.setDaemon(isDaemonThread);
         finished = false;
+        started = false;
         terminateRequested = false;
     }
 
     public void run() {
+        started = true;
         try {
             runInt();
         } catch (Throwable t) {
@@ -49,12 +52,16 @@ public abstract class SafeThread extends Thread implements CloseableComponent {
         return finished;
     }
 
+    public boolean wasStarted() {
+        return started;
+    }
+
     protected abstract void runInt() throws Exception;
 
     public void waitForFinish(long timeToWait) {
         long start = System.currentTimeMillis();
         long timeOfLastMessage = start;
-        while (!isFinished() && (timeToWait == -1 || System.currentTimeMillis() - start < timeToWait)) {
+        while (wasStarted() && !isFinished() && (timeToWait == -1 || System.currentTimeMillis() - start < timeToWait)) {
             Utils.threadSleep(10);
             if (System.currentTimeMillis() - timeOfLastMessage > 10 * 1000 && isTerminateRequested()) {
                 UI.write("Waiting for thread " + getName() + " to finish");
