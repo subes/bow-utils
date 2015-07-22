@@ -31,8 +31,11 @@ public abstract class SafeThread extends Thread implements CloseableComponent {
     @Override
     public void interrupt() {
         terminateRequested = true;
-        doTerminate();
-        super.interrupt();
+        try {
+            doTerminate();
+        } finally {
+            super.interrupt();
+        }
     }
 
     @Override

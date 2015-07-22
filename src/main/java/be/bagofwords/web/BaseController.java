@@ -8,17 +8,20 @@ import spark.Response;
 import spark.Route;
 
 @BowComponent
-public abstract class BaseController extends Route {
+public abstract class BaseController implements Route {
 
     private String path;
 
     protected BaseController(String path) {
-        super(path);
         this.path = path;
     }
 
     public String getPath() {
         return path;
+    }
+
+    public String getAcceptType() {
+        return "text/html";
     }
 
     @Override

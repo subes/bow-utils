@@ -9,19 +9,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextStartedEvent;
-import spark.route.RouteMatcher;
 import spark.route.RouteMatcherFactory;
+import spark.route.SimpleRouteMatcher;
 import spark.webserver.SparkServer;
 import spark.webserver.SparkServerFactory;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 public class WebContainer implements CloseableComponent, ApplicationListener<ContextStartedEvent> {
 
     @Autowired
     private ApplicationContext applicationContext;
+    @Autowired(required = false)
+    private StaticFolderConfiguration staticFolderConfiguration;
 
-    private RouteMatcher routeMatcher;
+
+    private SimpleRouteMatcher routeMatcher;
     private SparkServerThread sparkServerThread;
     private int port;
 
@@ -46,7 +50,11 @@ public class WebContainer implements CloseableComponent, ApplicationListener<Con
     @Override
     public void onApplicationEvent(ContextStartedEvent contextStartedEvent) {
         registerControllers();
-        sparkServerThread = new SparkServerThread(port);
+        String staticFolder = null;
+        if (staticFolderConfiguration != null) {
+            staticFolder = staticFolderConfiguration.getStaticFolder();
+        }
+        sparkServerThread = new SparkServerThread(port, staticFolder);
         sparkServerThread.start();
     }
 
@@ -76,28 +84,35 @@ public class WebContainer implements CloseableComponent, ApplicationListener<Con
     private static class SparkServerThread extends SafeThread {
 
         private int port;
+        private String staticFolder;
         private SparkServer server;
 
-        private SparkServerThread(int port) {
+        private SparkServerThread(int port, String staticFolder) {
             super("SparkServerThread", true);
             this.port = port;
+            this.staticFolder = staticFolder;
         }
 
         @Override
         protected void runInt() throws Exception {
             try {
-                server = SparkServerFactory.create(false);
-                server.ignite("0.0.0.0", port, null, null, null, null, null, null);
+                server = SparkServerFactory.create(staticFolder != null);
+                server.ignite("0.0.0.0", port, null, null, null, null, null, staticFolder, new CountDownLatch(1), 100, 1, 1000);
             } catch (Exception exp) {
                 UI.writeError("Error while trying to start spark server on port " + port);
                 server = null;
             }
         }
 
+
+        //We don't call super.interrupt() because this occasionally makes the spark server throw
+        //an interrupted exception and terminates the VM!
         @Override
-        protected void doTerminate() {
-            if (server != null) {
+        public void interrupt() {
+            try {
                 server.stop();
+            } finally {
+
             }
         }
     }
