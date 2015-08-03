@@ -4,13 +4,13 @@ import be.bagofwords.ui.UI;
 import be.bagofwords.util.URLUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import sun.security.ssl.SSLSocketImpl;
 
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -414,8 +414,9 @@ public class URLDownloader {
             InetAddress address = ExtraDNSCache.getAddress(urlParts.getHost());
             if (urlParts.isHttps()) {
                 SSLSocketFactory ssf = (SSLSocketFactory) SSLSocketFactory.getDefault();
-                s = ssf.createSocket(address, 443);
-                s.setSoTimeout((int) timeOut);
+                SSLSocket sslSocket = (SSLSocket) ssf.createSocket();
+                configureSSLSocket(address, sslSocket);
+                s = sslSocket;
             } else {
                 s = new Socket();
                 s.setSoTimeout((int) timeOut);
@@ -446,6 +447,18 @@ public class URLDownloader {
             IOUtils.closeQuietly(is);
             IOUtils.closeQuietly(s);
         }
+    }
+
+    private void configureSSLSocket(InetAddress address, SSLSocket sslSocket) throws IOException {
+        sslSocket.connect(new InetSocketAddress(address.getHostName(), 443));
+        if (sslSocket instanceof SSLSocketImpl) {
+            ((SSLSocketImpl) sslSocket).setHost(address.getHostName());
+        }
+        SSLParameters sslParameters = sslSocket.getSSLParameters();
+        sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+        sslSocket.setSSLParameters(sslParameters);
+        sslSocket.setSoTimeout((int) timeOut);
+        sslSocket.startHandshake();
     }
 
     private void printRequestHeaders(UrlParts urlParts, PrintStream ps) {
