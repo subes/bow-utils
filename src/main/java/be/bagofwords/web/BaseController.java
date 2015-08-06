@@ -6,22 +6,20 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import spark.Request;
 import spark.Response;
 import spark.Route;
+import spark.RouteImpl;
 
 @BowComponent
-public abstract class BaseController implements Route {
+public abstract class BaseController extends RouteImpl {
 
     private String path;
 
     protected BaseController(String path) {
+        super(path, "text/html");
         this.path = path;
     }
 
     public String getPath() {
         return path;
-    }
-
-    public String getAcceptType() {
-        return "text/html";
     }
 
     @Override
