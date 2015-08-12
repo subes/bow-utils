@@ -8,11 +8,20 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
  */
 public class UnitTestApplicationContextFactory implements ApplicationContextFactory {
 
+    private AnnotationConfigApplicationContext context;
+
+    public UnitTestApplicationContextFactory() {
+        context = new AnnotationConfigApplicationContext();
+    }
+
     @Override
-    public AnnotationConfigApplicationContext createApplicationContext() {
-        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+    public void wireApplicationContext() {
         context.getBeanFactory().registerSingleton("applicationContextFactory", this);
         context.scan("be.bagofwords");
+    }
+
+    @Override
+    public AnnotationConfigApplicationContext getApplicationContext() {
         return context;
     }
 

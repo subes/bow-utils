@@ -22,13 +22,14 @@ public class UnitTestContextLoader implements ContextLoader {
     @Override
     public ApplicationContext loadContext(String... locations) throws Exception {
         ApplicationContextFactory applicationContextFactory = new UnitTestApplicationContextFactory();
-        return applicationContextFactory.createApplicationContext();
+        applicationContextFactory.wireApplicationContext();
+        return applicationContextFactory.getApplicationContext();
     }
 
     private class UnitTestApplicationContextFactory extends BaseApplicationContextFactory {
 
         @Override
-        public AnnotationConfigApplicationContext createApplicationContext() {
+        public void wireApplicationContext() {
             scan("be.bagofwords");
             singleton("properties", new EnvironmentProperties() {
                 @Override
@@ -46,7 +47,7 @@ public class UnitTestContextLoader implements ContextLoader {
                     return "";
                 }
             });
-            return super.createApplicationContext();
+            super.wireApplicationContext();
         }
     }
 }

@@ -56,12 +56,11 @@ public abstract class BaseApplicationContextFactory implements ApplicationContex
     }
 
     @Override
-    public AnnotationConfigApplicationContext createApplicationContext() {
+    public void wireApplicationContext() {
         singleton("applicationContextFactory", this);
         applicationContext.refresh();
         applicationContext.registerShutdownHook();
         wireSingletons();
-        return applicationContext;
     }
 
     /**
@@ -81,6 +80,11 @@ public abstract class BaseApplicationContextFactory implements ApplicationContex
         } else {
             return "";
         }
+    }
+
+    @Override
+    public AnnotationConfigApplicationContext getApplicationContext() {
+        return applicationContext;
     }
 
     private static void setSaneDefaultsForLog4J() {

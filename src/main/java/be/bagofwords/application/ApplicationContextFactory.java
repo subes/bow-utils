@@ -7,7 +7,9 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
  */
 public interface ApplicationContextFactory {
 
-    public AnnotationConfigApplicationContext createApplicationContext();
+    void wireApplicationContext();
+
+    AnnotationConfigApplicationContext getApplicationContext();
 
     public String getApplicationName();
 
