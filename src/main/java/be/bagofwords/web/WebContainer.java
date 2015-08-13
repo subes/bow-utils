@@ -75,6 +75,9 @@ public class WebContainer implements CloseableComponent, ApplicationListener<Con
     public void registerController(BaseController controller) {
         routeMatcher.parseValidateAddRoute("GET '" + controller.getPath() + "'", controller.getAcceptType(), controller);
         routeMatcher.parseValidateAddRoute("POST '" + controller.getPath() + "'", controller.getAcceptType(), controller);
+        if (controller.isAllowCORS()) {
+            routeMatcher.parseValidateAddRoute("OPTIONS '" + controller.getPath() + "'", controller.getAcceptType(), controller);
+        }
     }
 
     public int getPort() {
