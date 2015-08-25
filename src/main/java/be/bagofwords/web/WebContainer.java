@@ -40,6 +40,7 @@ public class WebContainer implements CloseableComponent, ApplicationListener<Con
         }
         int randomPort = (int) (1023 + (hashCode % (65535 - 1023)));
         initialize(randomPort);
+        UI.write("Initialized web container on port " + randomPort);
     }
 
     private void initialize(int port) {

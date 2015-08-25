@@ -1,26 +1,39 @@
 package be.bagofwords.counts;
 
 import be.bagofwords.ui.UI;
+import be.bagofwords.util.Pair;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.*;
+import java.util.concurrent.Semaphore;
 
 public class DoubleCounter<T extends Object> {
 
-    private final HashMap<T, Double> counts;
+    private final Map<T, Double> counts;
+    private double cachedTotal;
+    private Semaphore lock;
 
     public DoubleCounter() {
         counts = new HashMap<>();
+        cachedTotal = -1;
+        lock = new Semaphore(1000);
     }
 
     public void inc(T s) {
         inc(s, 1.0);
     }
 
-    public void inc(T s, double value) {
-        if (counts.containsKey(s))
-            counts.put(s, counts.get(s) + value);
-        else
-            counts.put(s, value);
+    public synchronized void inc(T s, double count) {
+        if (counts.containsKey(s)) {
+            lock.acquireUninterruptibly(1);
+            counts.put(s, counts.get(s) + count);
+            lock.release();
+        } else {
+            lock.acquireUninterruptibly(1000);
+            counts.put(s, count);
+            lock.release(1000);
+        }
+        cachedTotal = -1;
     }
 
     public void print() {
@@ -36,9 +49,8 @@ public class DoubleCounter<T extends Object> {
         }
     }
 
-    public String[] keySet() {
-        Set<T> var = counts.keySet();
-        return var.toArray(new String[var.size()]);
+    public Set<T> keySet() {
+        return counts.keySet();
     }
 
     public List<T> sortedKeys() {
@@ -62,20 +74,30 @@ public class DoubleCounter<T extends Object> {
         }
     }
 
+    @JsonIgnore
     public double getTotal() {
-        int total = 0;
-        for (Double val : counts.values()) {
-            total += val;
+        if (cachedTotal == -1) {
+            cachedTotal = 0;
+            for (Double val : counts.values()) {
+                cachedTotal += val;
+            }
         }
-        return total;
+        return cachedTotal;
     }
 
-    public double getMax() {
-        double max = 0;
-        for (Double val : counts.values()) {
-            max = Math.max(max, val);
-        }
-        return max;
+    public Set<Map.Entry<T, Double>> entrySet() {
+        return counts.entrySet();
+    }
+
+    public DoubleCounter<T> clone() {
+        DoubleCounter<T> clone = new DoubleCounter<>();
+        clone.getMap().putAll(getMap());
+        return clone;
+    }
+
+    @JsonIgnore
+    public Map<T, Double> getMap() {
+        return counts;
     }
 
     public int size() {
@@ -92,7 +114,41 @@ public class DoubleCounter<T extends Object> {
         }
     }
 
-    private Set<Map.Entry<T, Double>> entrySet() {
-        return counts.entrySet();
+    public void addAll(List<Pair<T, Double>> values) {
+        counts.clear();
+        for (Pair<T, Double> value : values) {
+            counts.put(value.getFirst(), value.getSecond());
+        }
+    }
+
+    public void trim(int maxSize) {
+        if (maxSize <= 0) {
+            throw new RuntimeException("Incorrect max size:" + maxSize);
+        }
+        if (size() > maxSize) {
+            List<T> sortedKeys = sortedKeys();
+            for (int i = maxSize; i < sortedKeys.size(); i++) {
+                counts.remove(sortedKeys.get(i));
+            }
+        }
+    }
+
+    public void clear() {
+        counts.clear();
+    }
+
+    public List<Pair<T, Double>> getValuesAsList() {
+        List<Pair<T, Double>> result = new ArrayList<>();
+        for (Map.Entry<T, Double> entry : counts.entrySet()) {
+            result.add(new Pair<>(entry.getKey(), entry.getValue()));
+        }
+        return result;
+    }
+
+    public void setValuesAsList(List<Pair<T, Double>> values) {
+        counts.clear();
+        for (Pair<T, Double> value : values) {
+            counts.put(value.getFirst(), value.getSecond());
+        }
     }
 }
