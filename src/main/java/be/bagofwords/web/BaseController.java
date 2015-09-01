@@ -5,28 +5,40 @@ import be.bagofwords.ui.UI;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import spark.*;
 
-import java.util.Objects;
-
 import static spark.Spark.before;
 
 @BowComponent
 public abstract class BaseController extends RouteImpl {
 
     private String path;
+    private String method;
     private boolean allowCORS;
 
-    protected BaseController(String path) {
-        this(path, false);
+    public BaseController(String path) {
+        this(path, "GET");
     }
 
-    protected BaseController(String path, boolean allowCORS) {
-        super(path, "text/html");
+    public BaseController(String path, String method) {
+        this(path, method, false, "*/*");
+    }
+
+    public BaseController(String path, String method, boolean allowCORS, String acceptType) {
+        super(path, acceptType);
         this.path = path;
+        this.method = method;
         this.allowCORS = allowCORS;
     }
 
     public String getPath() {
         return path;
+    }
+
+    public String getMethod() {
+        return method;
+    }
+
+    public boolean isAllowCORS() {
+        return allowCORS;
     }
 
     @Override
@@ -51,7 +63,4 @@ public abstract class BaseController extends RouteImpl {
 
     protected abstract Object handleRequest(Request request, Response response) throws Exception;
 
-    public boolean isAllowCORS() {
-        return allowCORS;
-    }
 }

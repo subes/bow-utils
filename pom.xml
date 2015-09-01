@@ -6,7 +6,7 @@
 
     <groupId>be.bagofwords</groupId>
     <artifactId>bow-utils</artifactId>
-    <version>1.1.9</version>
+    <version>1.1.10</version>
     <packaging>jar</packaging>
 
     <name>${project.groupId}:${project.artifactId}</name>
