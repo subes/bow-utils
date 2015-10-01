@@ -1,6 +1,7 @@
 package be.bagofwords.util;
 
 import be.bagofwords.application.ApplicationContextFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 /**
@@ -15,9 +16,10 @@ public class UnitTestApplicationContextFactory implements ApplicationContextFact
     }
 
     @Override
-    public void wireApplicationContext() {
+    public ApplicationContext wireApplicationContext() {
         context.getBeanFactory().registerSingleton("applicationContextFactory", this);
         context.scan("be.bagofwords");
+        return context;
     }
 
     @Override

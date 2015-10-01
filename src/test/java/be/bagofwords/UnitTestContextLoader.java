@@ -29,7 +29,7 @@ public class UnitTestContextLoader implements ContextLoader {
     private class UnitTestApplicationContextFactory extends BaseApplicationContextFactory {
 
         @Override
-        public void wireApplicationContext() {
+        public AnnotationConfigApplicationContext wireApplicationContext() {
             scan("be.bagofwords");
             singleton("properties", new EnvironmentProperties() {
                 @Override
@@ -48,6 +48,7 @@ public class UnitTestContextLoader implements ContextLoader {
                 }
             });
             super.wireApplicationContext();
+            return null;
         }
     }
 }

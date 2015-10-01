@@ -7,7 +7,7 @@ package be.bagofwords.application.memory;
 
 public interface MemoryGobbler {
 
-    void freeMemory();
+    long freeMemory();
 
     long getMemoryUsage();
 

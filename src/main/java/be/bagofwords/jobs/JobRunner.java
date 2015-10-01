@@ -194,7 +194,7 @@ public class JobRunner implements CloseableComponent {
             this.name = name;
             this.numberOfObjects = numberOfObjects;
             this.numberOfPartitions = numberOfPartitions;
-            this.windowedCounts = new WindowOfCounts(60000);
+            this.windowedCounts = new WindowOfCounts(60000); //TODO this window should also take into account the number of tasks executed per second, i.e. for long tasks this window should be larger
             this.currentPartition = 0;
         }
 

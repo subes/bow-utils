@@ -3,6 +3,7 @@ package be.bagofwords.application;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.core.io.support.ResourcePatternResolver;
 
@@ -56,11 +57,12 @@ public abstract class BaseApplicationContextFactory implements ApplicationContex
     }
 
     @Override
-    public void wireApplicationContext() {
+    public ApplicationContext wireApplicationContext() {
         singleton("applicationContextFactory", this);
         applicationContext.refresh();
         applicationContext.registerShutdownHook();
         wireSingletons();
+        return applicationContext;
     }
 
     /**

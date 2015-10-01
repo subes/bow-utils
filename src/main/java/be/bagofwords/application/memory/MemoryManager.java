@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 @EagerBowComponent
 public class MemoryManager implements CloseableComponent, StatusViewable {
@@ -123,13 +124,12 @@ public class MemoryManager implements CloseableComponent, StatusViewable {
                         synchronized (memoryGobblers) {
                             currGobblers = new ArrayList<>(memoryGobblers);
                         }
-                        if (memoryStatus == MemoryStatus.CRITICAL) {
-                            printMemoryUsage(currGobblers);
-                        }
                         UI.write("Will free some memory, current status is " + memoryStatus);
-                        freeMemory(currGobblers);
+                        long numberOfItemsFreed = freeMemory(currGobblers);
                         memoryStatus = MemoryStatus.FREE;
-                        System.gc();
+                        if (numberOfItemsFreed > 0) {
+                            System.gc();
+                        }
                         //Dump memory to find any memory leaks
                         if (dumpHeapToFileWhenMemoryFull) {
                             UI.write("Dumping heap...");
@@ -195,14 +195,17 @@ public class MemoryManager implements CloseableComponent, StatusViewable {
         }
     }
 
-    private void freeMemory(List<WeakReference<MemoryGobbler>> currGobblers) {
+    private long freeMemory(List<WeakReference<MemoryGobbler>> currGobblers) {
         numberOfMemoryFrees.addCount();
-        currGobblers.parallelStream().forEach(reference -> {
+        long numberOfItemsFreed = currGobblers.parallelStream().map(reference -> {
             MemoryGobbler memoryGobbler = reference.get();
             if (memoryGobbler != null) {
-                memoryGobbler.freeMemory();
+                return memoryGobbler.freeMemory();
+            } else {
+                return 0l;
             }
-        });
+        }).collect(Collectors.summingLong(i -> i));
+        return numberOfItemsFreed;
     }
 
     private MemoryStatus findStatus(long used, long max) {
