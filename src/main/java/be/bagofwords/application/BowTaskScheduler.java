@@ -23,7 +23,7 @@ public class BowTaskScheduler implements CloseableComponent {
 
     public BowTaskScheduler() {
         executor = ExecutorServiceFactory.createExecutorService("periodic_task");
-        scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        scheduledExecutorService = Executors.newScheduledThreadPool(5);
         taskScheduler = new ConcurrentTaskScheduler(executor, scheduledExecutorService);
     }
 
