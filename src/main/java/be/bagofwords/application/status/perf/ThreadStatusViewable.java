@@ -1,11 +1,9 @@
 package be.bagofwords.application.status.perf;
 
-import be.bagofwords.application.annotations.EagerBowComponent;
 import be.bagofwords.application.status.StatusViewable;
 
 import java.util.*;
 
-@EagerBowComponent
 public class ThreadStatusViewable implements StatusViewable {
 
     private static final String indentation = "&nbsp;";

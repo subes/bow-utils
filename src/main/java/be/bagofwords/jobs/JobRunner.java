@@ -2,7 +2,6 @@ package be.bagofwords.jobs;
 
 
 import be.bagofwords.application.CloseableComponent;
-import be.bagofwords.application.annotations.BowComponent;
 import be.bagofwords.counts.WindowOfCounts;
 import be.bagofwords.iterator.CloseableIterator;
 import be.bagofwords.iterator.DataIterable;
@@ -16,7 +15,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-@BowComponent
 public class JobRunner implements CloseableComponent {
 
     private final List<JobStatus> runningJobs;

@@ -1,7 +1,6 @@
 package be.bagofwords.application.memory;
 
 import be.bagofwords.application.CloseableComponent;
-import be.bagofwords.application.annotations.EagerBowComponent;
 import be.bagofwords.application.status.StatusViewable;
 import be.bagofwords.counts.WindowOfCounts;
 import be.bagofwords.ui.UI;
@@ -24,7 +23,6 @@ import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-@EagerBowComponent
 public class MemoryManager implements CloseableComponent, StatusViewable {
 
     private final List<WeakReference<MemoryGobbler>> memoryGobblers;

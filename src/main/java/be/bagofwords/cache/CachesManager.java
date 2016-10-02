@@ -1,27 +1,24 @@
 package be.bagofwords.cache;
 
+import be.bagofwords.application.ApplicationContext;
 import be.bagofwords.application.BowTaskScheduler;
-import be.bagofwords.application.annotations.BowComponent;
 import be.bagofwords.application.memory.MemoryGobbler;
 import be.bagofwords.application.memory.MemoryManager;
 import be.bagofwords.application.status.StatusViewable;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-@BowComponent
 public class CachesManager implements MemoryGobbler, StatusViewable {
 
     private final List<WeakReference<ReadCache>> caches;
 
-    @Autowired
-    public CachesManager(MemoryManager memoryManager, BowTaskScheduler taskScheduler) {
+    public CachesManager(ApplicationContext applicationContext) {
         this.caches = new ArrayList<>();
-        memoryManager.registerMemoryGobbler(this);
-        taskScheduler.schedulePeriodicTask(this::updateCaches, 500);
+        applicationContext.getBean(MemoryManager.class).registerMemoryGobbler(this);
+        applicationContext.getBean(BowTaskScheduler.class).schedulePeriodicTask(this::updateCaches, 500);
     }
 
     private void updateCaches() {
@@ -36,7 +33,7 @@ public class CachesManager implements MemoryGobbler, StatusViewable {
     }
 
     @Override
-    public synchronized void freeMemory() {
+    public synchronized long freeMemory() {
         synchronized (caches) {
             for (WeakReference<ReadCache> reference : caches) {
                 ReadCache readCache = reference.get();
@@ -44,6 +41,7 @@ public class CachesManager implements MemoryGobbler, StatusViewable {
                     readCache.moveCachedObjectsToOld();
                 }
             }
+            return 0; //TODO return actual size of freeded memory
         }
     }
 

@@ -1,13 +1,11 @@
 package be.bagofwords.web;
 
-import be.bagofwords.application.annotations.BowComponent;
 import be.bagofwords.ui.UI;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import spark.*;
+import spark.Request;
+import spark.Response;
+import spark.RouteImpl;
 
-import static spark.Spark.before;
-
-@BowComponent
 public abstract class BaseController extends RouteImpl {
 
     private String path;

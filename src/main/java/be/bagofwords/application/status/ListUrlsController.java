@@ -1,10 +1,9 @@
 package be.bagofwords.application.status;
 
+import be.bagofwords.application.ApplicationContext;
 import be.bagofwords.application.CloseableComponent;
-import be.bagofwords.application.annotations.BowController;
 import be.bagofwords.util.Pair;
 import be.bagofwords.web.BaseController;
-import org.springframework.beans.factory.annotation.Autowired;
 import spark.Request;
 import spark.Response;
 
@@ -15,17 +14,15 @@ import java.util.List;
  * Created by Koen Deschacht (koendeschacht@gmail.com) on 07/10/14.
  */
 
-@BowController
 public class ListUrlsController extends BaseController implements CloseableComponent {
 
     private final List<Pair<String, String>> urls;
     private final RegisterUrlsServer registerUrlsServer;
 
-    @Autowired
-    public ListUrlsController(RemoteRegisterUrlsServerProperties properties) {
+    public ListUrlsController(ApplicationContext applicationContext) {
         super("/paths");
         this.urls = new ArrayList<>();
-        this.registerUrlsServer = new RegisterUrlsServer(properties.getRegisterUrlServerPort(), this);
+        this.registerUrlsServer = new RegisterUrlsServer(Integer.parseInt(applicationContext.getConfig("url_server_port")), this);
         this.registerUrlsServer.start();
     }
 

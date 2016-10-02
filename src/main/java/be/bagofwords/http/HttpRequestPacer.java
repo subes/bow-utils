@@ -1,13 +1,11 @@
 package be.bagofwords.http;
 
-import be.bagofwords.application.annotations.BowComponent;
 import be.bagofwords.util.Pair;
 import be.bagofwords.util.URLUtils;
 import be.bagofwords.util.Utils;
 
 import java.util.HashMap;
 
-@BowComponent
 public class HttpRequestPacer {
 
     public static final long MIN_TIME_BETWEEN_INTERNET_ACCESS = 10; //allow access 100 times a second

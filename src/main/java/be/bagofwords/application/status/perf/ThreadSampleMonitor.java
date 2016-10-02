@@ -1,9 +1,7 @@
 package be.bagofwords.application.status.perf;
 
-import be.bagofwords.application.ApplicationContextFactory;
+import be.bagofwords.application.ApplicationContext;
 import be.bagofwords.application.CloseableComponent;
-import be.bagofwords.application.EnvironmentProperties;
-import be.bagofwords.application.annotations.EagerBowComponent;
 import be.bagofwords.counts.Counter;
 import be.bagofwords.ui.UI;
 import be.bagofwords.util.SafeThread;
@@ -11,7 +9,6 @@ import be.bagofwords.util.Utils;
 import be.bagofwords.web.BaseController;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import spark.Request;
 import spark.Response;
 
@@ -20,7 +17,6 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 
-@EagerBowComponent
 public class ThreadSampleMonitor extends BaseController implements CloseableComponent {
 
     public static final int MAX_NUM_OF_SAMPLES = 10000;
@@ -34,28 +30,14 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
     private String locationForSavedThreadSamples;
     private String applicationName;
 
-    /**
-     * Constructor to be used in spring context
-     */
 
-    @Autowired
-    public ThreadSampleMonitor(EnvironmentProperties environmentProperties, ApplicationContextFactory applicationContextFactory) {
-        this(environmentProperties.saveThreadSamplesToFile(), environmentProperties.getThreadSampleLocation(), applicationContextFactory.getApplicationName());
-    }
-
-    /**
-     * Constructor to be used outside spring context
-     *
-     * @param saveThreadSamplesToFile
-     * @param locationForSavedThreadSamples
-     * @param applicationName
-     */
-
-    public ThreadSampleMonitor(boolean saveThreadSamplesToFile, String locationForSavedThreadSamples, String applicationName) {
+    public ThreadSampleMonitor(ApplicationContext applicationContext) {
         super("/perf");
-        this.saveThreadSamplesToFile = saveThreadSamplesToFile;
-        this.locationForSavedThreadSamples = locationForSavedThreadSamples;
-        this.applicationName = applicationName;
+        this.saveThreadSamplesToFile = Boolean.parseBoolean(applicationContext.getConfig("save_thread_samples_to_file", "false"));
+        if (this.saveThreadSamplesToFile) {
+            this.locationForSavedThreadSamples = applicationContext.getConfig("location_for_saved_thread_samples");
+        }
+        this.applicationName = applicationContext.getApplicationName();
         this.relevantTracesCounter = new Counter<>();
         this.lessRelevantTracesCounter = new Counter<>();
         this.traceSampler = new TraceSampler();
