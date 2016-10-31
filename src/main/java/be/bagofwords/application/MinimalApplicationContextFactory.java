@@ -14,5 +14,7 @@ public class MinimalApplicationContextFactory extends BaseApplicationContextFact
         context.registerBean(bowTaskScheduler);
         CachesManager cachesManager = new CachesManager(context);
         context.registerBean(cachesManager);
+        ApplicationManager manager = new ApplicationManager(context);
+        context.registerBean(manager);
     }
 }

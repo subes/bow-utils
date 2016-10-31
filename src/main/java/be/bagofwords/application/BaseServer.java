@@ -43,6 +43,7 @@ public abstract class BaseServer extends SafeThread {
     @Override
     protected void runInt() throws Exception {
         UI.write("Started server " + getName() + " on port " + scpPort);
+        Utils.threadSleep(500); //Make sure socket has had time to bind successfully (this does not yet work very well))
         while (!serverSocket.isClosed() && !isTerminateRequested()) {
             try {
                 SocketRequestHandler handler = createSocketRequestHandler(serverSocket.accept());

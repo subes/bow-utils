@@ -100,6 +100,7 @@ public class ApplicationContext {
                 }
             }
             applicationWasTerminated = true;
+            UI.write("Application has terminated. Goodbye!");
         }
     }
 
