@@ -4,7 +4,7 @@ package be.bagofwords.text;
  * String that exposes the underlying text from where the string originated
  */
 
-public interface BowString {
+public interface BowString extends CharSequence {
 
     int getStart();
 

@@ -2,7 +2,7 @@ package be.bagofwords.text;
 
 import be.bagofwords.util.HashUtils;
 
-public class BowStringImpl implements CharSequence, Comparable<BowStringImpl>, BowString {
+public class BowStringImpl implements Comparable<BowStringImpl>, BowString {
 
     public final Text text;
     public int start;

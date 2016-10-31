@@ -15,7 +15,7 @@ public class HashUtils {
         return hash;
     }
 
-    public static long hashCode(String s) {
+    public static long hashCode(CharSequence s) {
         return append(startHash, s);
     }
 
@@ -27,7 +27,7 @@ public class HashUtils {
         return hash;
     }
 
-    public static long append(long hash, String s) {
+    public static long append(long hash, CharSequence s) {
         for (int pos = 0; pos < s.length(); pos++) {
             hash = hash * addHash + s.charAt(pos);
         }
@@ -39,10 +39,6 @@ public class HashUtils {
             hash = hash * addHash + word.getTextS().charAt(pos);
         }
         return hash;
-    }
-
-    public static long hashCode(BowString targetWord) {
-        return append(startHash, targetWord);
     }
 
     public static long randomDistributeHash(long hash) {
