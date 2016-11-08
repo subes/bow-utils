@@ -1,8 +1,11 @@
 package be.bagofwords.application.status;
 
-import be.bagofwords.application.BaseServer;
+import be.bagofwords.application.SocketRequestHandler;
+import be.bagofwords.application.SocketRequestHandlerFactory;
+import be.bagofwords.application.SocketServer;
 import be.bagofwords.ui.UI;
-import be.bagofwords.util.WrappedSocketConnection;
+import be.bagofwords.util.BufferedSocketConnection;
+import be.bagofwords.util.SocketConnection;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -10,44 +13,44 @@ import java.net.Socket;
 /**
  * Created by Koen Deschacht (koendeschacht@gmail.com) on 07/10/14.
  */
-public class RegisterUrlsServer extends BaseServer {
+public class RegisterUrlsServer implements SocketRequestHandlerFactory {
 
     public static byte SEND_URL = 1;
 
     private ListUrlsController listUrlsController;
 
-    public RegisterUrlsServer(int port, ListUrlsController listUrlsController) {
-        super("RegisterUrlServer", port);
+    public RegisterUrlsServer(ListUrlsController listUrlsController) {
         this.listUrlsController = listUrlsController;
     }
 
     @Override
-    protected SocketRequestHandler createSocketRequestHandler(Socket socket) throws IOException {
-        WrappedSocketConnection connection = new WrappedSocketConnection(socket);
-        return new SocketRequestHandler(connection) {
+    public String getName() {
+        return "RegisterUrlServer";
+    }
+
+    @Override
+    public SocketRequestHandler createSocketRequestHandler(Socket socket) throws IOException {
+        SocketConnection connection = new BufferedSocketConnection(socket);
+        return new SocketRequestHandler() {
             @Override
-            protected void reportUnexpectedError(Exception ex) {
+            public void reportUnexpectedError(Exception ex) {
                 UI.writeError("Unexpected error in RegisterPathServer", ex);
             }
 
             @Override
-            protected void handleRequests() throws Exception {
+            public void handleRequests() throws Exception {
                 byte action = connection.readByte();
                 if (action == SEND_URL) {
                     String name = connection.readString();
                     String url = connection.readString();
                     listUrlsController.registerUrl(name, url);
-                    connection.writeLong(LONG_OK);
+                    connection.writeLong(SocketServer.LONG_OK);
                 } else {
-                    connection.writeLong(LONG_ERROR);
+                    connection.writeLong(SocketServer.LONG_ERROR);
                 }
                 connection.flush();
             }
 
-            @Override
-            public long getTotalNumberOfRequests() {
-                return 1;
-            }
         };
     }
 

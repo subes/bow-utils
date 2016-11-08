@@ -2,6 +2,7 @@ package be.bagofwords.application.status;
 
 import be.bagofwords.application.ApplicationContext;
 import be.bagofwords.application.CloseableComponent;
+import be.bagofwords.application.SocketServer;
 import be.bagofwords.util.Pair;
 import be.bagofwords.web.BaseController;
 import spark.Request;
@@ -14,16 +15,16 @@ import java.util.List;
  * Created by Koen Deschacht (koendeschacht@gmail.com) on 07/10/14.
  */
 
-public class ListUrlsController extends BaseController implements CloseableComponent {
+public class ListUrlsController extends BaseController {
 
     private final List<Pair<String, String>> urls;
-    private final RegisterUrlsServer registerUrlsServer;
 
     public ListUrlsController(ApplicationContext applicationContext) {
         super("/paths");
         this.urls = new ArrayList<>();
-        this.registerUrlsServer = new RegisterUrlsServer(Integer.parseInt(applicationContext.getConfig("url_server_port")), this);
-        this.registerUrlsServer.start();
+        RegisterUrlsServer registerUrlsServer = new RegisterUrlsServer(this);
+        SocketServer socketServer = applicationContext.getBean(SocketServer.class);
+        socketServer.registerSocketRequestHandlerFactory(registerUrlsServer);
     }
 
     @Override
@@ -49,8 +50,4 @@ public class ListUrlsController extends BaseController implements CloseableCompo
         }
     }
 
-    @Override
-    public void terminate() {
-        registerUrlsServer.terminateAndWaitForFinish();
-    }
 }

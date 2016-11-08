@@ -2,7 +2,7 @@ package be.bagofwords.application.status;
 
 import be.bagofwords.application.ApplicationContext;
 import be.bagofwords.application.BaseServer;
-import be.bagofwords.util.WrappedSocketConnection;
+import be.bagofwords.util.SocketConnection;
 import be.bagofwords.web.BaseController;
 import be.bagofwords.web.WebContainer;
 import org.apache.commons.io.IOUtils;
@@ -31,11 +31,11 @@ public class RegisterUrlsClient {
     }
 
     public void registerPath(String path) {
-        WrappedSocketConnection connection = null;
+        SocketConnection connection = null;
         try {
             String databaseServerAddress = applicationContext.getConfig("database_server_address");
             int registerUrlServerPort = Integer.parseInt(applicationContext.getConfig("url_server_port"));
-            connection = new WrappedSocketConnection(databaseServerAddress, registerUrlServerPort);
+            connection = new SocketConnection(databaseServerAddress, registerUrlServerPort);
             connection.writeByte(RegisterUrlsServer.SEND_URL);
             connection.writeString(applicationContext.getApplicationName());
             connection.writeString(path);

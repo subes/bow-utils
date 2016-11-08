@@ -1,6 +1,6 @@
 package be.bagofwords.util;
 
-import be.bagofwords.application.BaseServer;
+import be.bagofwords.application.SocketServer;
 import be.bagofwords.ui.UI;
 import org.xerial.snappy.Snappy;
 
@@ -8,29 +8,23 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 
-public class WrappedSocketConnection implements Closeable {
+public class SocketConnection implements Closeable {
 
     private Socket socket;
     private DataInputStream is;
     private DataOutputStream os;
     private boolean debug;
 
-    public WrappedSocketConnection(String host, int port) throws IOException {
-        this(host, port, false, false);
+    public SocketConnection(String host, int port) throws IOException {
+        this.socket = new Socket(host, port);
+        this.is = new DataInputStream(new BufferedInputStream(socket.getInputStream(), 32 * 1024));
+        this.os = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), 32 * 1024));
     }
 
-    public WrappedSocketConnection(String host, int port, boolean useLargeOutputBuffer, boolean useLargeInputBuffer) throws IOException {
-        this(new Socket(host, port), useLargeOutputBuffer, useLargeInputBuffer);
-    }
-
-    public WrappedSocketConnection(Socket socket) throws IOException {
-        this(socket, false, false);
-    }
-
-    public WrappedSocketConnection(Socket socket, boolean useLargeOutputBuffer, boolean useLargeInputBuffer) throws IOException {
+    public SocketConnection(Socket socket, DataInputStream is, DataOutputStream os) throws IOException {
         this.socket = socket;
-        this.is = new DataInputStream(new BufferedInputStream(socket.getInputStream(), useLargeInputBuffer ? 1024 * 1024 : 32 * 1024));
-        this.os = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), useLargeOutputBuffer ? 1024 * 1024 : 32 * 1024));
+        this.is = is;
+        this.os = os;
     }
 
     public boolean isDebug() {
@@ -197,19 +191,19 @@ public class WrappedSocketConnection implements Closeable {
         byte[] bytes = new byte[length];
         is.readFully(bytes);
         if (debug) {
-            String message = new String(bytes, BaseServer.ENCODING);
+            String message = new String(bytes, SocketServer.ENCODING);
             UI.write("RI <-- " + message.substring(0, Math.min(message.length(), 200)).replaceAll("\\W", "."));
         }
         return bytes;
     }
 
     public String readString() throws IOException {
-        return new String(readByteArray(), BaseServer.ENCODING);
+        return new String(readByteArray(), SocketServer.ENCODING);
     }
 
     public void writeByteArray(byte[] bytes) throws IOException {
         if (debug) {
-            String message = new String(bytes, BaseServer.ENCODING);
+            String message = new String(bytes, SocketServer.ENCODING);
             UI.write("RI --> " + message.substring(0, Math.min(message.length(), 200)).replaceAll("\\W", "."));
         }
         if (bytes.length > 1e9) {
@@ -220,7 +214,7 @@ public class WrappedSocketConnection implements Closeable {
     }
 
     public void writeString(String message) throws IOException {
-        byte[] bytes = message.getBytes(BaseServer.ENCODING);
+        byte[] bytes = message.getBytes(SocketServer.ENCODING);
         writeByteArray(bytes);
     }
 

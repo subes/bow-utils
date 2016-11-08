@@ -4,7 +4,6 @@ package be.bagofwords.application;
 import be.bagofwords.ui.UI;
 import be.bagofwords.util.SafeThread;
 import be.bagofwords.util.Utils;
-import be.bagofwords.util.WrappedSocketConnection;
 import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
@@ -38,102 +37,8 @@ public abstract class BaseServer extends SafeThread {
         }
     }
 
-    protected abstract SocketRequestHandler createSocketRequestHandler(Socket socket) throws IOException;
-
-    @Override
-    protected void runInt() throws Exception {
-        UI.write("Started server " + getName() + " on port " + scpPort);
-        Utils.threadSleep(500); //Make sure socket has had time to bind successfully (this does not yet work very well))
-        while (!serverSocket.isClosed() && !isTerminateRequested()) {
-            try {
-                SocketRequestHandler handler = createSocketRequestHandler(serverSocket.accept());
-                if (handler != null) {
-                    synchronized (runningRequestHandlers) {
-                        runningRequestHandlers.add(handler);
-                    }
-                    handler.start();
-                }
-                totalNumberOfConnections++;
-            } catch (IOException e) {
-                if (!(e instanceof SocketException || isTerminateRequested())) {
-                    UI.writeError(e);
-                }
-            }
-        }
-    }
-
-    @Override
-    public void doTerminate() {
-        IOUtils.closeQuietly(serverSocket);
-        //once a request handler is finished, it removes itself from the list of requestHandlers, so we just wait until this list is empty
-        while (!runningRequestHandlers.isEmpty()) {
-            synchronized (runningRequestHandlers) {
-                for (SocketRequestHandler requestHandler : runningRequestHandlers) {
-                    if (!requestHandler.isTerminateRequested()) {
-                        requestHandler.terminate(); //we can not call terminateAndWaitForFinish() here since to finish the request handler needs access to the runningRequestHandlers list
-                    }
-                }
-            }
-            Utils.threadSleep(10);
-        }
-        UI.write("Server " + getName() + " has been terminated.");
-    }
-
-    public int getTotalNumberOfConnections() {
-        return totalNumberOfConnections;
-    }
-
-    public List<SocketRequestHandler> getRunningRequestHandlers() {
-        return runningRequestHandlers;
-    }
-
-    public abstract class SocketRequestHandler extends SafeThread {
-
-        protected WrappedSocketConnection connection;
-
-        public SocketRequestHandler(WrappedSocketConnection connection) throws IOException {
-            super(BaseServer.this.getName() + "RequestHandler", false);
-            this.connection = connection;
-        }
-
-        protected abstract void reportUnexpectedError(Exception ex);
-
-        @Override
-        protected void runInt() {
-            try {
-                handleRequests();
-            } catch (Exception ex) {
-                if (isUnexpectedError(ex)) {
-                    reportUnexpectedError(ex);
-                }
-            }
-            IOUtils.closeQuietly(connection);
-            synchronized (runningRequestHandlers) {
-                runningRequestHandlers.remove(this);
-            }
-        }
-
-        protected abstract void handleRequests() throws Exception;
-
-        @Override
-        public void doTerminate() {
-            IOUtils.closeQuietly(connection);
-        }
-
-        protected boolean isUnexpectedError(Exception ex) {
-            if (ex.getMessage() != null && ex.getMessage().contains("Connection reset")) {
-                return false;
-            }
-            for (StackTraceElement el : ex.getStackTrace()) {
-                if (el.getMethodName().equals("readNextAction")) {
-                    return false;
-                }
-            }
-            return true;
-        }
 
 
-        public abstract long getTotalNumberOfRequests();
-    }
+
 
 }

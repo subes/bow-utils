@@ -4,7 +4,7 @@ import be.bagofwords.ui.UI;
 
 import java.util.concurrent.Semaphore;
 
-public class DataLock {
+public class DataLock implements SegmentedLock {
 
     private static final int DEFAULT_NUM_OF_LOCKS = 1000;
     private static final int NUM_OF_READ_PERMITS = 1000;
