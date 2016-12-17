@@ -21,6 +21,16 @@ public class SocketConnection implements Closeable {
         this.os = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), 32 * 1024));
     }
 
+    public SocketConnection(Socket socket) throws IOException {
+        this(socket, false, false);
+    }
+
+    public SocketConnection(Socket socket, boolean useLargeOutputBuffer, boolean useLargeInputBuffer) throws IOException {
+        this.socket = socket;
+        this.is = new DataInputStream(new BufferedInputStream(socket.getInputStream(), useLargeInputBuffer ? 1024 * 1024 : 32 * 1024));
+        this.os = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), useLargeOutputBuffer ? 1024 * 1024 : 32 * 1024));
+    }
+
     public SocketConnection(Socket socket, DataInputStream is, DataOutputStream os) throws IOException {
         this.socket = socket;
         this.is = is;
@@ -235,5 +245,9 @@ public class SocketConnection implements Closeable {
 
     public InetAddress getInetAddress() {
         return socket.getInetAddress();
+    }
+
+    public int getRemotePort() {
+        return socket.getPort();
     }
 }

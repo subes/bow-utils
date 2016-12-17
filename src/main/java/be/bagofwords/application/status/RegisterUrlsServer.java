@@ -1,5 +1,6 @@
 package be.bagofwords.application.status;
 
+import be.bagofwords.application.ApplicationContext;
 import be.bagofwords.application.SocketRequestHandler;
 import be.bagofwords.application.SocketRequestHandlerFactory;
 import be.bagofwords.application.SocketServer;
@@ -19,8 +20,10 @@ public class RegisterUrlsServer implements SocketRequestHandlerFactory {
 
     private ListUrlsController listUrlsController;
 
-    public RegisterUrlsServer(ListUrlsController listUrlsController) {
+    public RegisterUrlsServer(ListUrlsController listUrlsController, ApplicationContext context) {
         this.listUrlsController = listUrlsController;
+        SocketServer socketServer = context.getBean(SocketServer.class);
+        socketServer.registerSocketRequestHandlerFactory(this);
     }
 
     @Override
@@ -31,7 +34,7 @@ public class RegisterUrlsServer implements SocketRequestHandlerFactory {
     @Override
     public SocketRequestHandler createSocketRequestHandler(Socket socket) throws IOException {
         SocketConnection connection = new BufferedSocketConnection(socket);
-        return new SocketRequestHandler() {
+        return new SocketRequestHandler("register_url_handler", connection) {
             @Override
             public void reportUnexpectedError(Exception ex) {
                 UI.writeError("Unexpected error in RegisterPathServer", ex);

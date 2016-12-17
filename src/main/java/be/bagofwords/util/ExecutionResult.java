@@ -35,4 +35,8 @@ public class ExecutionResult {
     public void setErrorOut(String errorOut) {
         this.errorOut = errorOut;
     }
+
+    public boolean isSuccess() {
+        return this.returnCode == 0 ;
+    }
 }

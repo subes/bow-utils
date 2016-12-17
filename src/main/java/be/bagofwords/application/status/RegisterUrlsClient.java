@@ -1,7 +1,7 @@
 package be.bagofwords.application.status;
 
 import be.bagofwords.application.ApplicationContext;
-import be.bagofwords.application.BaseServer;
+import be.bagofwords.application.SocketServer;
 import be.bagofwords.util.SocketConnection;
 import be.bagofwords.web.BaseController;
 import be.bagofwords.web.WebContainer;
@@ -41,7 +41,7 @@ public class RegisterUrlsClient {
             connection.writeString(path);
             connection.flush();
             long result = connection.readLong();
-            if (result != BaseServer.LONG_OK) {
+            if (result != SocketServer.LONG_OK) {
                 throw new RuntimeException("Unexpected response " + result);
             }
         } catch (IOException e) {

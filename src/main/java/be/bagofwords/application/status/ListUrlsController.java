@@ -22,9 +22,7 @@ public class ListUrlsController extends BaseController {
     public ListUrlsController(ApplicationContext applicationContext) {
         super("/paths");
         this.urls = new ArrayList<>();
-        RegisterUrlsServer registerUrlsServer = new RegisterUrlsServer(this);
-        SocketServer socketServer = applicationContext.getBean(SocketServer.class);
-        socketServer.registerSocketRequestHandlerFactory(registerUrlsServer);
+        new RegisterUrlsServer(this, applicationContext);
     }
 
     @Override
