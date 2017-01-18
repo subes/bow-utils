@@ -16,9 +16,9 @@ public abstract class UI {
 
     private SimpleDateFormat printTimeFormat = new SimpleDateFormat("HH:mm:ss:SSS");
 
-    public static final boolean printTime = true;
+    public static boolean printTime = true;
 
-    public static final boolean printMemory = true;
+    public static boolean printMemory = true;
 
     public UI() {
         object = this;
