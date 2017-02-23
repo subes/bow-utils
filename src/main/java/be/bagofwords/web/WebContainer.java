@@ -1,9 +1,8 @@
 package be.bagofwords.web;
 
 import be.bagofwords.application.ApplicationContext;
-import be.bagofwords.application.CloseableComponent;
+import be.bagofwords.application.LifeCycleBean;
 import be.bagofwords.ui.UI;
-import be.bagofwords.util.HashUtils;
 import be.bagofwords.util.SafeThread;
 import be.bagofwords.util.StringUtils;
 import spark.embeddedserver.EmbeddedServer;
@@ -14,34 +13,21 @@ import spark.staticfiles.StaticFilesConfiguration;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-public class WebContainer implements CloseableComponent {
+public class WebContainer implements LifeCycleBean {
 
     private ApplicationContext applicationContext;
     private Routes routes;
     private SparkServerThread sparkServerThread;
     private int port;
 
-    public WebContainer(int port, ApplicationContext context) {
-        initialize(port);
+    public WebContainer(ApplicationContext context) {
+        port = Integer.parseInt(context.getConfig("web_port"));
         this.applicationContext = context;
     }
 
-    public WebContainer(String applicationName) {
-        long hashCode = HashUtils.hashCode(applicationName);
-        if (hashCode < 0) {
-            hashCode = -hashCode;
-        }
-        int randomPort = (int) (1023 + (hashCode % (65535 - 1023)));
-        initialize(randomPort);
-        UI.write("Initialized web container on port " + randomPort);
-    }
-
-    private void initialize(int port) {
+    @Override
+    public void startBean() {
         this.routes = Routes.create();
-        this.port = port;
-    }
-
-    public void startContainer() {
         registerControllers();
         String staticFolder = applicationContext.getConfig("static_folder", "");
         if (StringUtils.isEmpty(staticFolder)) {
@@ -51,8 +37,9 @@ public class WebContainer implements CloseableComponent {
         sparkServerThread.start();
     }
 
+
     @Override
-    public void terminate() {
+    public void stopBean() {
         routes.clear();
         sparkServerThread.terminateAndWaitForFinish();
     }

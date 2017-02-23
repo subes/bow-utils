@@ -1,7 +1,7 @@
 package be.bagofwords.jobs;
 
 
-import be.bagofwords.application.CloseableComponent;
+import be.bagofwords.application.LifeCycleBean;
 import be.bagofwords.counts.WindowOfCounts;
 import be.bagofwords.iterator.CloseableIterator;
 import be.bagofwords.iterator.DataIterable;
@@ -9,13 +9,17 @@ import be.bagofwords.ui.UI;
 import be.bagofwords.util.OccasionalAction;
 import be.bagofwords.util.SafeThread;
 import be.bagofwords.util.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-public class JobRunner implements CloseableComponent {
+public class JobRunner implements LifeCycleBean {
+
+    private static final Logger logger = LoggerFactory.getLogger(JobRunner.class);
 
     private final List<JobStatus> runningJobs;
     private boolean terminateRequested = false;
@@ -132,8 +136,25 @@ public class JobRunner implements CloseableComponent {
     }
 
     @Override
-    public void terminate() {
+    public void startBean() {
+        //Do nothing
+    }
+
+    @Override
+    public void stopBean() {
         terminateRequested = true;
+        long started = System.currentTimeMillis();
+        boolean interrupted = false;
+        while (System.currentTimeMillis() - started < 10 * 1000 && !runningJobs.isEmpty() && !interrupted) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                interrupted = true;
+            }
+        }
+        if (!runningJobs.isEmpty()) {
+            logger.info("While stopping JobRunner " + runningJobs.size() + " jobs did not finish in time");
+        }
     }
 
     private static class ExecuteActionRunnable<T> extends SafeThread {

@@ -1,11 +1,16 @@
 package be.bagofwords.util;
 
-import java.io.BufferedReader;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
 public class ExecuteProcess {
+
+    private static final Logger logger = LoggerFactory.getLogger(ExecuteProcess.class);
 
     public static ExecutionResult exec(ProcessBuilder processBuilder) throws IOException, InterruptedException {
         return exec(Integer.MAX_VALUE, processBuilder);
@@ -13,22 +18,25 @@ public class ExecuteProcess {
 
     public static ExecutionResult exec(int timeout, ProcessBuilder processBuilder) throws IOException, InterruptedException {
         Process p = processBuilder.start();
+        String psName = String.join(" ", processBuilder.command());
+        logger.info("Started process " + psName);
+        StreamToStringThread errorThread = new StreamToStringThread(p.getErrorStream());
+        StreamToStringThread stdThread = new StreamToStringThread(p.getInputStream());
+        errorThread.start();
+        stdThread.start();
         boolean processTerminatedNormally = p.waitFor(timeout, TimeUnit.MILLISECONDS);
+        logger.info("Process terminated " + psName);
         int exitValue = processTerminatedNormally ? p.exitValue() : -1;
-        BufferedReader rdr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-        StringBuilder errOut = new StringBuilder();
-        while (rdr.ready()) {
-            errOut.append(rdr.readLine());
-            errOut.append("\n");
+        errorThread.join();
+        stdThread.join();
+        if (errorThread.exp != null) {
+            throw new IOException("Could not read error output stream", errorThread.exp);
         }
-        rdr.close();
-        rdr = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        StringBuilder stdOut = new StringBuilder();
-        while (rdr.ready()) {
-            stdOut.append(rdr.readLine());
+        if (stdThread.exp != null) {
+            throw new IOException("Could not read std output stream", stdThread.exp);
         }
-        rdr.close();
-        return new ExecutionResult(exitValue, stdOut.toString(), errOut.toString());
+        logger.info("Returning result for " + psName);
+        return new ExecutionResult(exitValue, stdThread.output, errorThread.output);
     }
 
     public static ExecutionResult exec(String... params) throws IOException, InterruptedException {
@@ -37,5 +45,24 @@ public class ExecuteProcess {
 
     public static ExecutionResult exec(int timeout, String... params) throws IOException, InterruptedException {
         return exec(timeout, new ProcessBuilder(params));
+    }
+
+    private static class StreamToStringThread extends Thread {
+        private final InputStream inputStream;
+        public String output;
+        public IOException exp;
+
+        private StreamToStringThread(InputStream inputStream) {
+            this.inputStream = inputStream;
+        }
+
+        @Override
+        public void run() {
+            try {
+                output = IOUtils.toString(inputStream, "UTF-8");
+            } catch (IOException exp) {
+                this.exp = exp;
+            }
+        }
     }
 }

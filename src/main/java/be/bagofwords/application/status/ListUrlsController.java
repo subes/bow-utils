@@ -1,8 +1,6 @@
 package be.bagofwords.application.status;
 
 import be.bagofwords.application.ApplicationContext;
-import be.bagofwords.application.CloseableComponent;
-import be.bagofwords.application.SocketServer;
 import be.bagofwords.util.Pair;
 import be.bagofwords.web.BaseController;
 import spark.Request;

@@ -1,9 +1,13 @@
 package be.bagofwords.util;
 
-import be.bagofwords.application.CloseableComponent;
+import be.bagofwords.application.LifeCycleBean;
 import be.bagofwords.ui.UI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public abstract class SafeThread extends Thread implements CloseableComponent {
+public abstract class SafeThread extends Thread implements LifeCycleBean {
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private boolean terminateRequested;
     private boolean finished;
@@ -33,7 +37,6 @@ public abstract class SafeThread extends Thread implements CloseableComponent {
         terminate();
     }
 
-    @Override
     public void terminate() {
         terminateRequested = true;
         doTerminate();
@@ -76,5 +79,19 @@ public abstract class SafeThread extends Thread implements CloseableComponent {
     public void terminateAndWaitForFinish() {
         terminate();
         waitForFinish();
+    }
+
+    @Override
+    public void startBean() {
+        start();
+    }
+
+    @Override
+    public void stopBean() {
+        terminate();
+        waitForFinish(10 * 1000);
+        if (!finished) {
+            logger.warn("Bean " + getName() + " did not stop after waiting 10s");
+        }
     }
 }

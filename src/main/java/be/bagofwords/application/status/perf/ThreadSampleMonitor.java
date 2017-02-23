@@ -1,7 +1,7 @@
 package be.bagofwords.application.status.perf;
 
 import be.bagofwords.application.ApplicationContext;
-import be.bagofwords.application.CloseableComponent;
+import be.bagofwords.application.LifeCycleBean;
 import be.bagofwords.counts.Counter;
 import be.bagofwords.ui.UI;
 import be.bagofwords.util.SafeThread;
@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 
-public class ThreadSampleMonitor extends BaseController implements CloseableComponent {
+public class ThreadSampleMonitor extends BaseController implements LifeCycleBean {
 
     public static final int MAX_NUM_OF_SAMPLES = 10000;
 
@@ -41,7 +41,6 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
         this.relevantTracesCounter = new Counter<>();
         this.lessRelevantTracesCounter = new Counter<>();
         this.traceSampler = new TraceSampler();
-        this.traceSampler.start();
         this.numOfSamples = 0;
     }
 
@@ -63,7 +62,12 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
     }
 
     @Override
-    public void terminate() {
+    public void startBean() {
+        this.traceSampler.start();
+    }
+
+    @Override
+    public void stopBean() {
         traceSampler.terminateAndWaitForFinish();
         if (saveThreadSamplesToFile) {
             saveThreadSamplesToFile();
@@ -81,7 +85,7 @@ public class ThreadSampleMonitor extends BaseController implements CloseableComp
                     ThreadSamplesPrinter.printTopTraces(sb, relevantTracesCounter, numOfSamples);
                     sb.append("\n\n-- Less relevant traces --\n\n");
                     ThreadSamplesPrinter.printTopTraces(sb, lessRelevantTracesCounter, numOfSamples);
-                    FileUtils.writeStringToFile(file, sb.toString());
+                    FileUtils.writeStringToFile(file, sb.toString(), "UTF-8");
                 }
             }
         } catch (IOException exp) {

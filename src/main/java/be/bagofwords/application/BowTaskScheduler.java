@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
  * Created by Koen Deschacht (koendeschacht@gmail.com) on 14/11/14.
  */
 
-public class BowTaskScheduler implements CloseableComponent {
+public class BowTaskScheduler implements LifeCycleBean {
 
     private ScheduledExecutorService scheduledExecutorService;
 
@@ -25,7 +25,12 @@ public class BowTaskScheduler implements CloseableComponent {
     }
 
     @Override
-    public void terminate() {
+    public void startBean() {
+        //Do nothing
+    }
+
+    @Override
+    public void stopBean() {
         scheduledExecutorService.shutdown();
     }
 }

@@ -2,16 +2,31 @@ package be.bagofwords.application;
 
 import be.bagofwords.ui.UI;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
 public class ApplicationManager {
 
+    public static void runSafely(MainClass main, BaseApplicationContextFactory factory) {
+        runSafely(main, Collections.emptyMap(), factory);
+    }
 
-    public static <T extends Runnable> void runSafely(MainClass main, Map<String, String> config, BaseApplicationContextFactory factory) {
+    public static void runSafely(MainClass main) {
+        runSafely(main, Collections.emptyMap(), null);
+    }
+
+    public static void runSafely(MainClass main, Map<String, String> config) {
+        runSafely(main, config, null);
+    }
+
+    public static void runSafely(MainClass main, Map<String, String> config, BaseApplicationContextFactory factory) {
         try {
             ApplicationContext applicationContext = new ApplicationContext(config);
-            factory.wireApplicationContext(applicationContext);
+            if (factory != null) {
+                factory.wireApplicationContext(applicationContext);
+            }
+            applicationContext.startApplication();
             main.run(applicationContext);
         } catch (Throwable exp) {
             UI.writeError("Received unexpected exception, terminating application.", exp);

@@ -1,6 +1,6 @@
 package be.bagofwords.application.memory;
 
-import be.bagofwords.application.CloseableComponent;
+import be.bagofwords.application.LifeCycleBean;
 import be.bagofwords.application.status.StatusViewable;
 import be.bagofwords.counts.WindowOfCounts;
 import be.bagofwords.ui.UI;
@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-public class MemoryManager implements CloseableComponent, StatusViewable {
+public class MemoryManager implements LifeCycleBean, StatusViewable {
 
     private final List<WeakReference<MemoryGobbler>> memoryGobblers;
     private MemoryStatus memoryStatus;
@@ -52,7 +52,13 @@ public class MemoryManager implements CloseableComponent, StatusViewable {
     }
 
     @Override
-    public void terminate() {
+    public void startBean() {
+        //Do nothing
+    }
+
+
+    @Override
+    public void stopBean() {
         freeMemoryThread.terminateAndWaitForFinish();
     }
 
@@ -176,19 +182,6 @@ public class MemoryManager implements CloseableComponent, StatusViewable {
 
                 //Add the listener
                 emitter.addNotificationListener(listener, null, null);
-            }
-        }
-    }
-
-    private void printMemoryUsage(List<WeakReference<MemoryGobbler>> currGobblers) {
-        synchronized (UI.getInstance()) {
-            UI.write("[Memory] Memory critical! Printing usage:");
-            for (WeakReference<MemoryGobbler> reference : currGobblers) {
-                MemoryGobbler memoryGobbler = reference.get();
-                if (memoryGobbler != null && memoryGobbler.getMemoryUsage() > 0) {
-                    long usage = memoryGobbler.getMemoryUsage() / 1024;
-                    UI.write("[Memory] " + memoryGobbler.getClass().getSimpleName() + " " + usage + " kb");
-                }
             }
         }
     }

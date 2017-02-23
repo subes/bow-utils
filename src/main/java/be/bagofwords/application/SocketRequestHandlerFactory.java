@@ -8,7 +8,8 @@ import java.net.Socket;
  */
 public interface SocketRequestHandlerFactory {
 
-    public String getName();
-    public SocketRequestHandler createSocketRequestHandler(Socket socket) throws IOException;
+    String getName();
+
+    SocketRequestHandler createSocketRequestHandler(Socket socket) throws IOException;
 
 }

@@ -27,10 +27,10 @@ public class SocketServer extends SafeThread implements StatusViewable {
     private final int scpPort;
     private int totalNumberOfConnections;
 
-    public SocketServer(int port) {
+    public SocketServer(ApplicationContext context) {
         super("socket_server", false);
         this.runningRequestHandlers = new ArrayList<>();
-        this.scpPort = port;
+        this.scpPort = Integer.parseInt(context.getConfig("socket_port"));
         this.totalNumberOfConnections = 0;
         this.socketRequestHandlerFactories = new HashMap<>();
         try {
@@ -56,7 +56,7 @@ public class SocketServer extends SafeThread implements StatusViewable {
                 Socket acceptedSocket = serverSocket.accept();
                 SocketConnection connection = new UnbufferedSocketConnection(acceptedSocket);
                 String factoryName = connection.readString();
-                if(factoryName==null || StringUtils.isEmpty(factoryName.trim())) {
+                if (factoryName == null || StringUtils.isEmpty(factoryName.trim())) {
                     connection.writeLong(SocketServer.LONG_ERROR);
                     connection.writeString("No name specified for the requested SocketRequestHandlerFactory");
                     continue;
