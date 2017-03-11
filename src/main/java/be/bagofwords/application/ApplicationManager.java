@@ -21,8 +21,8 @@ public class ApplicationManager {
     }
 
     public static void runSafely(MainClass main, Map<String, String> config, BaseApplicationContextFactory factory) {
+        ApplicationContext applicationContext = new ApplicationContext(config);
         try {
-            ApplicationContext applicationContext = new ApplicationContext(config);
             if (factory != null) {
                 factory.wireApplicationContext(applicationContext);
             }
@@ -30,6 +30,8 @@ public class ApplicationManager {
             main.run(applicationContext);
         } catch (Throwable exp) {
             UI.writeError("Received unexpected exception, terminating application.", exp);
+        } finally {
+            applicationContext.terminateApplication();
         }
     }
 

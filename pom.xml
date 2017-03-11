@@ -6,7 +6,7 @@
 
     <groupId>be.bagofwords</groupId>
     <artifactId>bow-utils</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.1</version>
     <packaging>jar</packaging>
 
     <name>${project.groupId}:${project.artifactId}</name>
@@ -119,6 +119,11 @@
     </build>
 
     <dependencies>
+        <dependency>
+            <groupId>be.bagofwords</groupId>
+            <artifactId>mini-dep-i</artifactId>
+            <version>2017.1.0</version>
+        </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>

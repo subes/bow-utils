@@ -1,14 +1,7 @@
 package be.bagofwords.http;
 
-import be.bagofwords.ui.UI;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-
-import static org.junit.Assert.*;
 
 /**
  * Created by koen on 3/08/15.

@@ -30,4 +30,14 @@ public class TimeUtilsTest {
         Assert.assertNull(result.result);
     }
 
+    @Test
+    public void testJobWithException() {
+        TimeUtils.TimedResult<Double> result = TimeUtils.limitInTime(1000, () -> {
+            throw new RuntimeException("Test");
+        });
+        Assert.assertTrue(result.finishedInTime);
+        Assert.assertNull(result.result);
+        Assert.assertNotNull(result.error);
+    }
+
 }

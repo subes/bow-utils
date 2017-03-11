@@ -30,27 +30,32 @@ public class TimeUtils {
 
     public static <T> TimedResult<T> limitInTime(long maxRuntimeInMs, Supplier<T> generatorFunction) {
         MutableObject<T> result = new MutableObject<>(null);
+        MutableObject<Throwable> error = new MutableObject<>(null);
         MutableBoolean functionFinished = new MutableBoolean(false);
         MutableLong started = new MutableLong(-1);
         Future<?> future = execService.submit(() -> {
             started.setValue(System.currentTimeMillis());
-            result.setValue(generatorFunction.get());
+            try {
+                result.setValue(generatorFunction.get());
+            } catch (Throwable t) {
+                error.setValue(t);
+            }
             functionFinished.setTrue();
         });
         while (!future.isDone() && (started.getValue() == -1 || System.currentTimeMillis() - started.getValue() < maxRuntimeInMs)) {
             try {
                 Thread.sleep(maxRuntimeInMs / 10);
             } catch (InterruptedException e) {
-                return new TimedResult<>(null, false);
+                return new TimedResult<>(null, false, null);
             }
         }
         if (!future.isDone()) {
             future.cancel(true);
         }
         if (functionFinished.isTrue()) {
-            return new TimedResult<>(result.getValue(), true);
+            return new TimedResult<>(result.getValue(), true, error.getValue());
         } else {
-            return new TimedResult<>(null, false);
+            return new TimedResult<>(null, false, error.getValue());
         }
     }
 
@@ -82,10 +87,12 @@ public class TimeUtils {
     public static class TimedResult<T> {
         public T result;
         public boolean finishedInTime;
+        public Throwable error;
 
-        public TimedResult(T result, boolean finishedInTime) {
+        public TimedResult(T result, boolean finishedInTime, Throwable error) {
             this.result = result;
             this.finishedInTime = finishedInTime;
+            this.error = error;
         }
     }
 

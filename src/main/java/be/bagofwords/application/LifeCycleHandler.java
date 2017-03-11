@@ -29,7 +29,7 @@ public class LifeCycleHandler {
                 waitUntilBeanStopped(bean);
             }
             applicationWasTerminated = true;
-            UI.write("Application has terminated. Goodbye!");
+            UI.write("Application has terminated. Bye!");
         } else {
             logger.info("Application was already terminated...");
         }
@@ -42,7 +42,6 @@ public class LifeCycleHandler {
                 waitUntilBeanStarted(bean);
             }
             applicationWasStarted = true;
-            UI.write("Application has terminated. Goodbye!");
         } else {
             logger.info("Application was already started...");
         }
