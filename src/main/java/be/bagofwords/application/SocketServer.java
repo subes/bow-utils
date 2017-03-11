@@ -1,6 +1,7 @@
 package be.bagofwords.application;
 
 import be.bagofwords.application.status.StatusViewable;
+import be.bagofwords.minidepi.ApplicationContext;
 import be.bagofwords.ui.UI;
 import be.bagofwords.util.*;
 import org.apache.commons.io.IOUtils;
@@ -30,7 +31,7 @@ public class SocketServer extends SafeThread implements StatusViewable {
     public SocketServer(ApplicationContext context) {
         super("socket_server", false);
         this.runningRequestHandlers = new ArrayList<>();
-        this.scpPort = Integer.parseInt(context.getConfig("socket_port"));
+        this.scpPort = Integer.parseInt(context.getProperty("socket_port"));
         this.totalNumberOfConnections = 0;
         this.socketRequestHandlerFactories = new HashMap<>();
         try {
@@ -112,7 +113,6 @@ public class SocketServer extends SafeThread implements StatusViewable {
     public List<SocketRequestHandler> getRunningRequestHandlers() {
         return runningRequestHandlers;
     }
-
 
     public void removeHandler(SocketRequestHandler handler) {
         synchronized (runningRequestHandlers) {

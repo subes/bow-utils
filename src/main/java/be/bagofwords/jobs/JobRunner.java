@@ -1,10 +1,10 @@
 package be.bagofwords.jobs;
 
 
-import be.bagofwords.application.LifeCycleBean;
 import be.bagofwords.counts.WindowOfCounts;
 import be.bagofwords.iterator.CloseableIterator;
 import be.bagofwords.iterator.DataIterable;
+import be.bagofwords.minidepi.LifeCycleBean;
 import be.bagofwords.ui.UI;
 import be.bagofwords.util.OccasionalAction;
 import be.bagofwords.util.SafeThread;

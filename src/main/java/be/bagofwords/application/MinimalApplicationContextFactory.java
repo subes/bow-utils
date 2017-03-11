@@ -2,19 +2,16 @@ package be.bagofwords.application;
 
 import be.bagofwords.application.memory.MemoryManager;
 import be.bagofwords.cache.CachesManager;
+import be.bagofwords.minidepi.ApplicationContext;
 
-public class MinimalApplicationContextFactory extends BaseApplicationContextFactory {
+public class MinimalApplicationContextFactory {
 
-    @Override
     public void wireApplicationContext(ApplicationContext context) {
-        super.wireApplicationContext(context);
         MemoryManager memoryManager = new MemoryManager();
         BowTaskScheduler bowTaskScheduler = new BowTaskScheduler();
-        context.registerBean(memoryManager);
-        context.registerBean(bowTaskScheduler);
+        context.declareBean(memoryManager);
+        context.declareBean(bowTaskScheduler);
         CachesManager cachesManager = new CachesManager(context);
-        context.registerBean(cachesManager);
-        ApplicationManager manager = new ApplicationManager(context);
-        context.registerBean(manager);
+        context.declareBean(cachesManager);
     }
 }

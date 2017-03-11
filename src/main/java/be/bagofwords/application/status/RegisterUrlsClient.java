@@ -1,7 +1,7 @@
 package be.bagofwords.application.status;
 
-import be.bagofwords.application.ApplicationContext;
 import be.bagofwords.application.SocketServer;
+import be.bagofwords.minidepi.ApplicationContext;
 import be.bagofwords.util.SocketConnection;
 import be.bagofwords.web.BaseController;
 import be.bagofwords.web.WebContainer;
@@ -24,7 +24,7 @@ public class RegisterUrlsClient {
     public void startClient() {
         WebContainer webContainer = applicationContext.getBean(WebContainer.class);
         List<? extends BaseController> controllers = applicationContext.getBeans(BaseController.class);
-        String applicationRoot = applicationContext.getConfig("application_root");
+        String applicationRoot = applicationContext.getProperty("application_root");
         for (BaseController controller : controllers) {
             registerPath(applicationRoot + ":" + webContainer.getPort() + controller.getPath());
         }
@@ -33,8 +33,8 @@ public class RegisterUrlsClient {
     public void registerPath(String path) {
         SocketConnection connection = null;
         try {
-            String databaseServerAddress = applicationContext.getConfig("database_server_address");
-            int registerUrlServerPort = Integer.parseInt(applicationContext.getConfig("url_server_port"));
+            String databaseServerAddress = applicationContext.getProperty("database_server_address");
+            int registerUrlServerPort = Integer.parseInt(applicationContext.getProperty("url_server_port"));
             connection = new SocketConnection(databaseServerAddress, registerUrlServerPort);
             connection.writeByte(RegisterUrlsServer.SEND_URL);
             connection.writeString(applicationContext.getApplicationName());

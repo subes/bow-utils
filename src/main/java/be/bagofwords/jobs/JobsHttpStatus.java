@@ -1,6 +1,6 @@
 package be.bagofwords.jobs;
 
-import be.bagofwords.application.ApplicationContext;
+import be.bagofwords.minidepi.ApplicationContext;
 import be.bagofwords.web.BaseController;
 import spark.Request;
 import spark.Response;

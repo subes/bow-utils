@@ -1,7 +1,7 @@
 package be.bagofwords.web;
 
-import be.bagofwords.application.ApplicationContext;
-import be.bagofwords.application.LifeCycleBean;
+import be.bagofwords.minidepi.ApplicationContext;
+import be.bagofwords.minidepi.LifeCycleBean;
 import be.bagofwords.ui.UI;
 import be.bagofwords.util.SafeThread;
 import be.bagofwords.util.StringUtils;
@@ -21,7 +21,7 @@ public class WebContainer implements LifeCycleBean {
     private int port;
 
     public WebContainer(ApplicationContext context) {
-        port = Integer.parseInt(context.getConfig("web_port"));
+        port = Integer.parseInt(context.getProperty("web_port"));
         this.applicationContext = context;
     }
 
@@ -29,7 +29,7 @@ public class WebContainer implements LifeCycleBean {
     public void startBean() {
         this.routes = Routes.create();
         registerControllers();
-        String staticFolder = applicationContext.getConfig("static_folder", "");
+        String staticFolder = applicationContext.getProperty("static_folder", "");
         if (StringUtils.isEmpty(staticFolder)) {
             staticFolder = null;
         }

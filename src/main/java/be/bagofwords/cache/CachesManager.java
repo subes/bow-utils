@@ -1,10 +1,10 @@
 package be.bagofwords.cache;
 
-import be.bagofwords.application.ApplicationContext;
 import be.bagofwords.application.BowTaskScheduler;
 import be.bagofwords.application.memory.MemoryGobbler;
 import be.bagofwords.application.memory.MemoryManager;
 import be.bagofwords.application.status.StatusViewable;
+import be.bagofwords.minidepi.ApplicationContext;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;

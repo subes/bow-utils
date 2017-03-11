@@ -1,8 +1,8 @@
 package be.bagofwords.application.memory;
 
-import be.bagofwords.application.LifeCycleBean;
 import be.bagofwords.application.status.StatusViewable;
 import be.bagofwords.counts.WindowOfCounts;
+import be.bagofwords.minidepi.LifeCycleBean;
 import be.bagofwords.ui.UI;
 import be.bagofwords.util.NumUtils;
 import be.bagofwords.util.SafeThread;

@@ -1,8 +1,8 @@
 package be.bagofwords.cache;
 
-import be.bagofwords.application.ApplicationContext;
 import be.bagofwords.application.MinimalApplicationContextFactory;
 import be.bagofwords.application.memory.MemoryManager;
+import be.bagofwords.minidepi.ApplicationContext;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

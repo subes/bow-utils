@@ -1,8 +1,8 @@
 package be.bagofwords.application.status.perf;
 
-import be.bagofwords.application.ApplicationContext;
-import be.bagofwords.application.LifeCycleBean;
 import be.bagofwords.counts.Counter;
+import be.bagofwords.minidepi.ApplicationContext;
+import be.bagofwords.minidepi.LifeCycleBean;
 import be.bagofwords.ui.UI;
 import be.bagofwords.util.SafeThread;
 import be.bagofwords.util.Utils;
@@ -33,9 +33,9 @@ public class ThreadSampleMonitor extends BaseController implements LifeCycleBean
 
     public ThreadSampleMonitor(ApplicationContext applicationContext) {
         super("/perf");
-        this.saveThreadSamplesToFile = Boolean.parseBoolean(applicationContext.getConfig("save_thread_samples_to_file", "false"));
+        this.saveThreadSamplesToFile = Boolean.parseBoolean(applicationContext.getProperty("save_thread_samples_to_file", "false"));
         if (this.saveThreadSamplesToFile) {
-            this.locationForSavedThreadSamples = applicationContext.getConfig("location_for_saved_thread_samples");
+            this.locationForSavedThreadSamples = applicationContext.getProperty("location_for_saved_thread_samples");
         }
         this.applicationName = applicationContext.getApplicationName();
         this.relevantTracesCounter = new Counter<>();

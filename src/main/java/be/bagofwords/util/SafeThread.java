@@ -1,6 +1,6 @@
 package be.bagofwords.util;
 
-import be.bagofwords.application.LifeCycleBean;
+import be.bagofwords.minidepi.LifeCycleBean;
 import be.bagofwords.ui.UI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

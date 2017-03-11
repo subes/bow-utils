@@ -1,9 +1,9 @@
 package be.bagofwords.application.status;
 
-import be.bagofwords.application.ApplicationContext;
 import be.bagofwords.application.SocketRequestHandler;
 import be.bagofwords.application.SocketRequestHandlerFactory;
 import be.bagofwords.application.SocketServer;
+import be.bagofwords.minidepi.ApplicationContext;
 import be.bagofwords.ui.UI;
 import be.bagofwords.util.BufferedSocketConnection;
 import be.bagofwords.util.SocketConnection;
