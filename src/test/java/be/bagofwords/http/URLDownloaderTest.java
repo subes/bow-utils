@@ -1,6 +1,7 @@
 package be.bagofwords.http;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -9,6 +10,7 @@ import org.junit.Test;
 public class URLDownloaderTest {
 
     @Test
+    @Ignore
     public void testHttps() throws Exception {
         URLDownloader urlDownloader = new URLDownloader("https://www.febelfin.be/nl/nieuws");
         DownloadResult download = urlDownloader.download();

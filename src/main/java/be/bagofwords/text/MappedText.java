@@ -168,4 +168,25 @@ public class MappedText implements Serializable, Text {
     public void setUrl(String url) {
         this.url = url;
     }
+
+    public int length() {
+        return getText().length();
+    }
+
+    public char charAt(int pos) {
+        return getText().charAt(pos);
+    }
+
+    public String substring(int start, int end) {
+        return getText().substring(start, end);
+    }
+
+    public String substring(int start) {
+        return getText().substring(start);
+    }
+
+    @Override
+    public int size() {
+        return length();
+    }
 }

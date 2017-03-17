@@ -1,8 +1,12 @@
 package be.bagofwords.application;
 
+import be.bagofwords.minidepi.annotations.Inject;
+import be.bagofwords.ui.UI;
 import be.bagofwords.util.SafeThread;
 import be.bagofwords.util.SocketConnection;
 import org.apache.commons.io.IOUtils;
+
+import java.io.IOException;
 
 /**
  * Created by koen on 01.11.16.
@@ -10,16 +14,14 @@ import org.apache.commons.io.IOUtils;
 public abstract class SocketRequestHandler extends SafeThread {
 
     protected SocketConnection connection;
-    private SocketServer socketServer;
     private long startTime;
+
+    @Inject
+    private SocketServer socketServer;
 
     public SocketRequestHandler(String name, SocketConnection connection) {
         super(name, true);
         this.connection = connection;
-    }
-
-    public void setSocketServer(SocketServer socketServer) {
-        this.socketServer = socketServer;
     }
 
     public long getStartTime() {
@@ -60,4 +62,12 @@ public abstract class SocketRequestHandler extends SafeThread {
         return -1; //Should be overridden in subclasses
     }
 
+    @Override
+    protected void doTerminate() {
+        try {
+            connection.close();
+        } catch (IOException e) {
+            UI.writeError("Failed to close connection in handler " + getName(), e);
+        }
+    }
 }

@@ -1,6 +1,5 @@
 package be.bagofwords.util;
 
-
 import be.bagofwords.text.BowString;
 
 public class HashUtils {
@@ -39,6 +38,14 @@ public class HashUtils {
             hash = hash * addHash + word.getTextS().charAt(pos);
         }
         return hash;
+    }
+
+    public static long append(long hash, long number) {
+        return hash * addHash + number;
+    }
+
+    public static long append(long hash, double number) {
+        return hash * addHash + Double.doubleToLongBits(number);
     }
 
     public static long randomDistributeHash(long hash) {

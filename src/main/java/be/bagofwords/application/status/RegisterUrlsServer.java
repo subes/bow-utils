@@ -3,7 +3,7 @@ package be.bagofwords.application.status;
 import be.bagofwords.application.SocketRequestHandler;
 import be.bagofwords.application.SocketRequestHandlerFactory;
 import be.bagofwords.application.SocketServer;
-import be.bagofwords.minidepi.ApplicationContext;
+import be.bagofwords.minidepi.annotations.Inject;
 import be.bagofwords.ui.UI;
 import be.bagofwords.util.BufferedSocketConnection;
 import be.bagofwords.util.SocketConnection;
@@ -18,13 +18,8 @@ public class RegisterUrlsServer implements SocketRequestHandlerFactory {
 
     public static byte SEND_URL = 1;
 
+    @Inject
     private ListUrlsController listUrlsController;
-
-    public RegisterUrlsServer(ListUrlsController listUrlsController, ApplicationContext context) {
-        this.listUrlsController = listUrlsController;
-        SocketServer socketServer = context.getBean(SocketServer.class);
-        socketServer.registerSocketRequestHandlerFactory(this);
-    }
 
     @Override
     public String getName() {

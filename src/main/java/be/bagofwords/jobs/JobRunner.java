@@ -1,6 +1,5 @@
 package be.bagofwords.jobs;
 
-
 import be.bagofwords.counts.WindowOfCounts;
 import be.bagofwords.iterator.CloseableIterator;
 import be.bagofwords.iterator.DataIterable;
@@ -112,7 +111,12 @@ public class JobRunner implements LifeCycleBean {
     }
 
     public <T extends Object> void runJob(final boolean printProgress, int numOfThreads, final String name, DataIterable<T> iterable, final Job<T> job) {
-        runPartitionedJobs(printProgress, 1, numOfThreads, name, iterable, (partition, target) -> job.doAction(target));
+        runPartitionedJobs(printProgress, 1, numOfThreads, name, iterable, new PartitionableJob<T>() {
+            @Override
+            public void doAction(int partition, T target) throws Exception {
+                job.doAction(target);
+            }
+        });
     }
 
     public <T extends Object> void runJob(final String name, DataIterable<T> iterable, final Job<T> job) {

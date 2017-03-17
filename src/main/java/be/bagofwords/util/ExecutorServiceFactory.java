@@ -15,7 +15,7 @@ public class ExecutorServiceFactory {
         return createExecutorService(DEFAULT_NUM_OF_THREADS, name);
     }
 
-    public static ExecutorService createExecutorService(int numberOfThreads, String name) {
+    public static ExecutorService createExecutorService(int numberOfThreads, final String name) {
         return Executors.newFixedThreadPool(numberOfThreads, new ThreadFactory() {
 
             private int threadNr = 0;

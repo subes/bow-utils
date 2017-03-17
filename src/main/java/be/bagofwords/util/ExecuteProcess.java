@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.TimeUnit;
 
 public class ExecuteProcess {
 
@@ -18,15 +17,23 @@ public class ExecuteProcess {
 
     public static ExecutionResult exec(int timeout, ProcessBuilder processBuilder) throws IOException, InterruptedException {
         Process p = processBuilder.start();
-        String psName = String.join(" ", processBuilder.command());
+        String psName = "";
+        for (String command : processBuilder.command()) {
+            psName += command + " ";
+        }
+        psName = psName.trim();
         logger.info("Started process " + psName);
         StreamToStringThread errorThread = new StreamToStringThread(p.getErrorStream());
         StreamToStringThread stdThread = new StreamToStringThread(p.getInputStream());
         errorThread.start();
         stdThread.start();
-        boolean processTerminatedNormally = p.waitFor(timeout, TimeUnit.MILLISECONDS);
-        logger.info("Process terminated " + psName);
-        int exitValue = processTerminatedNormally ? p.exitValue() : -1;
+        WaitForThread waitForThread = new WaitForThread(p);
+        waitForThread.start();
+        long started = System.currentTimeMillis();
+        while (System.currentTimeMillis() - started < timeout && !waitForThread.finished) {
+            Thread.sleep(20);
+        }
+        int exitValue = waitForThread.finished ? p.exitValue() : -1;
         errorThread.join();
         stdThread.join();
         if (errorThread.exp != null) {
@@ -35,7 +42,6 @@ public class ExecuteProcess {
         if (stdThread.exp != null) {
             throw new IOException("Could not read std output stream", stdThread.exp);
         }
-        logger.info("Returning result for " + psName);
         return new ExecutionResult(exitValue, stdThread.output, errorThread.output);
     }
 
@@ -62,6 +68,24 @@ public class ExecuteProcess {
                 output = IOUtils.toString(inputStream, "UTF-8");
             } catch (IOException exp) {
                 this.exp = exp;
+            }
+        }
+    }
+
+    private static class WaitForThread extends Thread {
+        private final Process process;
+        public boolean finished;
+
+        public WaitForThread(Process process) {
+            this.process = process;
+        }
+
+        public void run() {
+            try {
+                process.waitFor();
+                finished = true;
+            } catch (InterruptedException e) {
+                finished = false;
             }
         }
     }

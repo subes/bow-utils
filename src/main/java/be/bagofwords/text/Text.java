@@ -2,27 +2,14 @@ package be.bagofwords.text;
 
 public interface Text extends SequentialData {
 
-    public String getText();
+    String getText();
 
-    default int length() {
-        return getText().length();
-    }
+    int length();
 
-    default char charAt(int pos) {
-        return getText().charAt(pos);
-    }
+    char charAt(int pos);
 
-    default String substring(int start, int end) {
-        return getText().substring(start, end);
-    }
+    String substring(int start, int end);
 
-    default String substring(int start) {
-        return getText().substring(start);
-    }
-
-    @Override
-    default int size() {
-        return length();
-    }
+    String substring(int start);
 
 }

@@ -14,17 +14,8 @@ public interface BowString extends CharSequence {
 
     Text getText();
 
-    default String getTextS() {
-        return getText().getText();
-    }
+    String getTextS();
 
-    default String uniqueId() {
-        return getText().getId() + "_" + getStart() + "_" + getEnd();
-    }
-
-    default boolean equals(BowString other) {
-        return getText().getId().equals(other.getText().getId()) && getStart() == other.getStart() && getEnd() == other.getEnd();
-    }
-
+    String uniqueId();
 
 }

@@ -1,6 +1,6 @@
 package be.bagofwords.application.status;
 
-import be.bagofwords.minidepi.ApplicationContext;
+import be.bagofwords.minidepi.annotations.Inject;
 import be.bagofwords.util.Pair;
 import be.bagofwords.web.BaseController;
 import spark.Request;
@@ -15,12 +15,13 @@ import java.util.List;
 
 public class ListUrlsController extends BaseController {
 
-    private final List<Pair<String, String>> urls;
+    private final List<Pair<String, String>> urls = new ArrayList<>();
 
-    public ListUrlsController(ApplicationContext applicationContext) {
+    @Inject
+    private RegisterUrlsServer registerUrlsServer;
+
+    public ListUrlsController() {
         super("/paths");
-        this.urls = new ArrayList<>();
-        new RegisterUrlsServer(this, applicationContext);
     }
 
     @Override

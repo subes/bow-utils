@@ -86,4 +86,16 @@ public class BowStringImpl implements Comparable<BowStringImpl>, BowString {
     public void setStart(int start) {
         this.start = start;
     }
+
+    public String getTextS() {
+        return getText().getText();
+    }
+
+    public String uniqueId() {
+        return getText().getId() + "_" + getStart() + "_" + getEnd();
+    }
+
+    public boolean equals(BowString other) {
+        return getText().getId().equals(other.getText().getId()) && getStart() == other.getStart() && getEnd() == other.getEnd();
+    }
 }
