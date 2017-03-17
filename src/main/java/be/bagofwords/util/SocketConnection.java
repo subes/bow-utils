@@ -21,6 +21,12 @@ public class SocketConnection implements Closeable {
         this.os = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), 32 * 1024));
     }
 
+    public SocketConnection(String host, int port, String handler) throws IOException {
+        this(host, port);
+        writeString(handler);
+        flush();
+    }
+
     public SocketConnection(Socket socket) throws IOException {
         this(socket, false, false);
     }
