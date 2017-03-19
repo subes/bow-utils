@@ -59,7 +59,7 @@ public class SocketServer implements StatusViewable, LifeCycleBean {
         UI.write("Started socket server on port " + port);
     }
 
-    private synchronized void registerSocketRequestHandlerFactory(SocketRequestHandlerFactory factory) {
+    public synchronized void registerSocketRequestHandlerFactory(SocketRequestHandlerFactory factory) {
         if (socketRequestHandlerFactories.containsKey(factory.getName())) {
             throw new RuntimeException("A SocketRequestHandlerFactory was already registered with name " + factory.getName());
         }
@@ -74,9 +74,7 @@ public class SocketServer implements StatusViewable, LifeCycleBean {
         while (!runningRequestHandlers.isEmpty()) {
             synchronized (runningRequestHandlers) {
                 for (SocketRequestHandler requestHandler : runningRequestHandlers) {
-                    if (!requestHandler.isTerminateRequested()) {
-                        requestHandler.terminate(); //we can not call terminateAndWaitForFinish() here since to finish the request handler needs access to the runningRequestHandlers list
-                    }
+                    requestHandler.interrupt();
                 }
             }
             Utils.threadSleep(10);
@@ -133,26 +131,29 @@ public class SocketServer implements StatusViewable, LifeCycleBean {
     }
 
     private class HandlerThread extends Thread {
+        public HandlerThread() {
+            super("socket-server-accept-thread");
+        }
+
         public void run() {
             while (!serverSocket.isClosed() && !terminateRequested) {
                 try {
                     Socket acceptedSocket = serverSocket.accept();
-                    SocketConnection connection = new UnbufferedSocketConnection(acceptedSocket);
+                    SocketConnection connection = new SocketConnection(acceptedSocket);
                     String factoryName = connection.readString();
                     if (factoryName == null || StringUtils.isEmpty(factoryName.trim())) {
-                        connection.writeLong(SocketServer.LONG_ERROR);
-                        connection.writeString("No name specified for the requested SocketRequestHandlerFactory");
+                        connection.writeError("No name specified for the requested SocketRequestHandlerFactory");
                         continue;
                     }
                     SocketRequestHandlerFactory factory = socketRequestHandlerFactories.get(factoryName);
                     if (factory == null) {
                         UI.writeWarning("No SocketRequestHandlerFactory registered for name " + factoryName);
-                        connection.writeLong(SocketServer.LONG_ERROR);
-                        connection.writeString("No SocketRequestHandlerFactory registered for name " + factoryName);
+                        connection.writeError("No SocketRequestHandlerFactory registered for name " + factoryName);
                         continue;
                     }
-                    SocketRequestHandler handler = factory.createSocketRequestHandler(acceptedSocket);
+                    SocketRequestHandler handler = factory.createSocketRequestHandler(connection);
                     if (handler != null) {
+                        handler.setName(factoryName + "_" + Long.toHexString(System.currentTimeMillis()));
                         applicationContext.wireBean(handler);
                         synchronized (runningRequestHandlers) {
                             runningRequestHandlers.add(handler);

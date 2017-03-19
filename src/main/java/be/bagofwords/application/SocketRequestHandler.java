@@ -2,7 +2,6 @@ package be.bagofwords.application;
 
 import be.bagofwords.minidepi.annotations.Inject;
 import be.bagofwords.ui.UI;
-import be.bagofwords.util.SafeThread;
 import be.bagofwords.util.SocketConnection;
 import org.apache.commons.io.IOUtils;
 
@@ -11,7 +10,7 @@ import java.io.IOException;
 /**
  * Created by koen on 01.11.16.
  */
-public abstract class SocketRequestHandler extends SafeThread {
+public abstract class SocketRequestHandler extends Thread {
 
     protected SocketConnection connection;
     private long startTime;
@@ -19,8 +18,8 @@ public abstract class SocketRequestHandler extends SafeThread {
     @Inject
     private SocketServer socketServer;
 
-    public SocketRequestHandler(String name, SocketConnection connection) {
-        super(name, true);
+    public SocketRequestHandler(SocketConnection connection) {
+        setDaemon(true);
         this.connection = connection;
     }
 
@@ -29,12 +28,18 @@ public abstract class SocketRequestHandler extends SafeThread {
     }
 
     @Override
-    protected void runInt() throws Exception {
+    public void run() {
         try {
+            this.connection.ensureBuffered();
             startTime = System.currentTimeMillis();
             handleRequests();
         } catch (Exception ex) {
             if (isUnexpectedError(ex)) {
+                try {
+                    connection.writeError("Unexpected error", ex);
+                } catch (IOException e) {
+                    UI.writeError("Failed to send unexpected error on socket", e);
+                }
                 reportUnexpectedError(ex);
             }
         }
@@ -63,11 +68,8 @@ public abstract class SocketRequestHandler extends SafeThread {
     }
 
     @Override
-    protected void doTerminate() {
-        try {
-            connection.close();
-        } catch (IOException e) {
-            UI.writeError("Failed to close connection in handler " + getName(), e);
-        }
+    public void interrupt() {
+        IOUtils.closeQuietly(connection);
+        super.interrupt();
     }
 }

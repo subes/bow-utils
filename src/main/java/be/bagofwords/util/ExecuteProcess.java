@@ -34,6 +34,9 @@ public class ExecuteProcess {
             Thread.sleep(20);
         }
         int exitValue = waitForThread.finished ? p.exitValue() : -1;
+        if (!waitForThread.finished) {
+            p.destroy();
+        }
         errorThread.join();
         stdThread.join();
         if (errorThread.exp != null) {
