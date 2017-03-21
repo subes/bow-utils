@@ -1,6 +1,5 @@
 package be.bagofwords.util;
 
-import be.bagofwords.application.SocketServer;
 import be.bagofwords.ui.UI;
 import org.xerial.snappy.Snappy;
 
@@ -303,7 +302,7 @@ public class SocketConnection implements Closeable {
         byte[] bytes = new byte[length];
         is.readFully(bytes);
         if (debug) {
-            String message = new String(bytes, SocketServer.ENCODING);
+            String message = new String(bytes, "UTF-8");
             UI.write("RI <-- " + message.substring(0, Math.min(message.length(), 200)).replaceAll("\\W", "."));
         }
         return bytes;
@@ -314,7 +313,7 @@ public class SocketConnection implements Closeable {
     }
 
     private String readStringImpl(boolean doChecksBeforeRead) throws IOException {
-        return new String(readByteArrayImpl(doChecksBeforeRead), SocketServer.ENCODING);
+        return new String(readByteArrayImpl(doChecksBeforeRead), "UTF-8");
     }
 
     public void writeByteArray(byte[] bytes) throws IOException {
@@ -326,7 +325,7 @@ public class SocketConnection implements Closeable {
             actionsBeforeWrite();
         }
         if (debug) {
-            String message = new String(bytes, SocketServer.ENCODING);
+            String message = new String(bytes, "UTF-8");
             UI.write("RI --> " + message.substring(0, Math.min(message.length(), 200)).replaceAll("\\W", "."));
         }
         if (bytes.length > 1e9) {
@@ -342,7 +341,7 @@ public class SocketConnection implements Closeable {
     }
 
     private void writeStringImpl(String message, boolean doActionsBeforeWrite) throws IOException {
-        byte[] bytes = message.getBytes(SocketServer.ENCODING);
+        byte[] bytes = message.getBytes("UTF-8");
         writeByteArrayImpl(bytes, doActionsBeforeWrite);
     }
 

@@ -1,11 +1,10 @@
 package be.bagofwords.util;
 
-import be.bagofwords.minidepi.LifeCycleBean;
 import be.bagofwords.ui.UI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class SafeThread extends Thread implements LifeCycleBean {
+public abstract class SafeThread extends Thread {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -81,17 +80,4 @@ public abstract class SafeThread extends Thread implements LifeCycleBean {
         waitForFinish();
     }
 
-    @Override
-    public void startBean() {
-        start();
-    }
-
-    @Override
-    public void stopBean() {
-        terminate();
-        waitForFinish(10 * 1000);
-        if (!finished) {
-            logger.warn("Bean " + getName() + " did not stop after waiting 10s");
-        }
-    }
 }
