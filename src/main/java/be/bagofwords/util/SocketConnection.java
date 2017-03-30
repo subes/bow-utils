@@ -59,7 +59,7 @@ public class SocketConnection implements Closeable {
         bufferOutputStream(1024 * 1024);
     }
 
-    private void bufferOutputStream(int size) throws IOException {
+    public void bufferOutputStream(int size) throws IOException {
         if (outputStreamBuffered) {
             throw new RuntimeException("The output stream has already been buffered. Can not buffer again because we might lose bytes");
         }
@@ -71,7 +71,7 @@ public class SocketConnection implements Closeable {
         bufferInputStream(1024 * 1024);
     }
 
-    private void bufferInputStream(int size) throws IOException {
+    public void bufferInputStream(int size) throws IOException {
         if (inputStreamBuffered) {
             throw new RuntimeException("The input stream has already been buffered. Can not buffer again because we might lose bytes");
         }
