@@ -1,6 +1,7 @@
 package be.bagofwords.util;
 
 import be.bagofwords.ui.UI;
+import com.sun.javafx.beans.annotations.NonNull;
 import org.xerial.snappy.Snappy;
 
 import java.io.*;
@@ -266,7 +267,11 @@ public class SocketConnection implements Closeable {
         sendDataSinceLastFlush = false;
     }
 
-    public <T> void writeValue(T value, Class<T> objectClass) throws IOException {
+    public <T extends Object> void writeValue(@NonNull T value) throws IOException {
+        writeValue(value, (Class<T>) value.getClass());
+    }
+
+    public <T extends Object> void writeValue(T value, Class<T> objectClass) throws IOException {
         actionsBeforeWrite();
         byte[] objectAsBytes = SerializationUtils.objectToBytesCheckForNull(value, objectClass);
         int width = SerializationUtils.getWidth(objectClass);

@@ -146,6 +146,9 @@ public class SerializationUtils {
                 valueAsInt = Float.floatToIntBits((Float) value);
             }
             return intToBytes(valueAsInt);
+        } else if (Enum.class.isAssignableFrom(objectClass)) {
+            Enum enumValue = (Enum) value;
+            return stringToBytes(enumValue.name());
         } else {
             if (value == null) {
                 return STRING_NULL;
@@ -199,6 +202,10 @@ public class SerializationUtils {
             } else {
                 return null;
             }
+        } else if (Enum.class.isAssignableFrom(objectClass)) {
+            Class<? extends Enum> enumClass = (Class)objectClass;
+            String name = bytesToString(value, offset, length);
+            return (T) Enum.valueOf(enumClass, name);
         } else {
             byte[] actualValue = Arrays.copyOfRange(value, offset, offset + length);
             if (Arrays.equals(STRING_NULL, actualValue)) {
@@ -267,7 +274,6 @@ public class SerializationUtils {
         bytes[offset + 6] = (byte) (value >>> 8);
         bytes[offset + 7] = (byte) (value);
     }
-
 
     public static long bytesToLong(byte[] bytes) {
         return bytesToLong(bytes, 0);
