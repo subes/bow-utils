@@ -220,8 +220,20 @@ public class Utils {
         }
     }
 
-    public static interface Action {
-        public void run() throws Exception;
+    public static <T> T noException(ActionWithResult<T> action) {
+        try {
+            return action.run();
+        } catch (Exception ex) {
+            throw new RuntimeException("Unexpected exception", ex);
+        }
+    }
+
+    public interface Action {
+        void run() throws Exception;
+    }
+
+    public interface ActionWithResult<T> {
+        T run() throws Exception;
     }
 
 }

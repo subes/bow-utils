@@ -39,6 +39,7 @@ public class SerializationUtilsTest {
         TestEnum converted = SerializationUtils.bytesToObject(SerializationUtils.objectToBytes(TestEnum.SECOND_VALUE, TestEnum.class), TestEnum.class);
         Assert.assertEquals(TestEnum.SECOND_VALUE, converted);
         Assert.assertEquals(4, converted.someMethod());
+        checkConversion(null, TestEnum.class);
     }
 
     private void checkConversion(Object obj, Class objectClass) {
