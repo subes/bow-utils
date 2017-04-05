@@ -1,5 +1,8 @@
 package be.bagofwords.util;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+
 import java.io.*;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
@@ -234,6 +237,24 @@ public class Utils {
 
     public interface ActionWithResult<T> {
         T run() throws Exception;
+    }
+
+    public static void copyResource(File targetDir, String resourcePath) {
+        InputStream is = Utils.class.getResourceAsStream(resourcePath);
+        if (is == null) {
+            throw new RuntimeException("Could not find resource " + resourcePath);
+        }
+        String resourcePathNoTrailingSlash = resourcePath;
+        if (resourcePathNoTrailingSlash.startsWith("/")) {
+            resourcePathNoTrailingSlash = resourcePathNoTrailingSlash.substring(1);
+        }
+        File targetFile = new File(targetDir, resourcePathNoTrailingSlash);
+        try {
+            FileUtils.copyInputStreamToFile(is, targetFile);
+        } catch (IOException exp) {
+            throw new RuntimeException("Failed to copy resource " + resourcePath + " to file " + targetFile.getAbsolutePath());
+        }
+        IOUtils.closeQuietly(is);
     }
 
 }

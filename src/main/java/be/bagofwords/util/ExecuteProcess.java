@@ -1,15 +1,11 @@
 package be.bagofwords.util;
 
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 public class ExecuteProcess {
-
-    private static final Logger logger = LoggerFactory.getLogger(ExecuteProcess.class);
 
     public static ExecutionResult exec(ProcessBuilder processBuilder) throws IOException, InterruptedException {
         return exec(Integer.MAX_VALUE, processBuilder);
@@ -17,12 +13,6 @@ public class ExecuteProcess {
 
     public static ExecutionResult exec(int timeout, ProcessBuilder processBuilder) throws IOException, InterruptedException {
         Process p = processBuilder.start();
-        String psName = "";
-        for (String command : processBuilder.command()) {
-            psName += command + " ";
-        }
-        psName = psName.trim();
-        logger.info("Started process " + psName);
         StreamToStringThread errorThread = new StreamToStringThread(p.getErrorStream());
         StreamToStringThread stdThread = new StreamToStringThread(p.getInputStream());
         errorThread.start();
