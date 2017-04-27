@@ -15,7 +15,7 @@ public class SdtOutLogImpl implements LogImpl {
         String loggerStr = logger != null ? logger.getSimpleName() : "ROOT";
         if (throwable != null) {
             stream.println(level + " " + loggerStr + " " + message + " " + throwable.getMessage());
-            stream.println(Utils.getStackTrace(new RuntimeException("Dummy")));
+            stream.println(Utils.getStackTrace(throwable));
         } else {
             stream.println(level + " " + loggerStr + " " + message);
         }

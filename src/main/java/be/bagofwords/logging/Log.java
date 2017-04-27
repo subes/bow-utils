@@ -7,7 +7,7 @@ import static be.bagofwords.logging.LogLevel.*;
  */
 public class Log {
 
-    private static LogImpl DEFAULT_INSTANCE = new SdtOutLogImpl();
+    private static LogImpl DEFAULT_INSTANCE = new Slf4jLogImpl();
     private static LogImpl INSTANCE = DEFAULT_INSTANCE;
     public static final Object LOCK = new Object();
 
