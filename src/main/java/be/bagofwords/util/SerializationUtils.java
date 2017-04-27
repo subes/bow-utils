@@ -173,11 +173,11 @@ public class SerializationUtils {
         }
     }
 
-    public static <T> T bytesToObjectCheckForNull(byte[] value, Class<T> objectClass) {
-        return bytesToObjectCheckForNull(value, 0, value.length, objectClass);
+    public static <T> T bytesToObjectCheckForNull(byte[] value, Class<T> objectClass, Class... genericParams) {
+        return bytesToObjectCheckForNull(value, 0, value.length, objectClass, genericParams);
     }
 
-    public static <T> T bytesToObjectCheckForNull(byte[] value, int offset, int length, Class<T> objectClass) {
+    public static <T> T bytesToObjectCheckForNull(byte[] value, int offset, int length, Class<T> objectClass, Class... genericParams) {
         if (objectClass == Long.class) {
             long response = bytesToLong(value, offset);
             if (response != LONG_NULL) {
@@ -228,7 +228,7 @@ public class SerializationUtils {
                         throw new RuntimeException("Could not instantiate object of class " + objectClass + ". Does it have a constructor with as only argument an array of bytes?", e);
                     }
                 } else {
-                    return SerializationUtils.deserializeObject(bytesToString(actualValue), objectClass);
+                    return SerializationUtils.deserializeObject(bytesToString(actualValue), objectClass, genericParams);
                 }
             }
         }

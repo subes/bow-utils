@@ -230,7 +230,7 @@ public class SocketConnection implements Closeable {
         return value;
     }
 
-    public <T> T readValue(Class<T> objectClass) throws IOException {
+    public <T> T readValue(Class<T> objectClass, Class... genericParams) throws IOException {
         checksBeforeRead();
         int length = SerializationUtils.getWidth(objectClass);
         boolean isCompressed = false;
@@ -257,8 +257,7 @@ public class SocketConnection implements Closeable {
         if (isCompressed) {
             objectAsBytes = Snappy.uncompress(objectAsBytes);
         }
-        T result = SerializationUtils.bytesToObjectCheckForNull(objectAsBytes, objectClass);
-        return result;
+        return SerializationUtils.bytesToObjectCheckForNull(objectAsBytes, objectClass, genericParams);
     }
 
     public void flush() throws IOException {
