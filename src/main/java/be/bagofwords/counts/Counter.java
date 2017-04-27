@@ -13,6 +13,14 @@ public class Counter<T extends Object> {
     private long cachedTotal;
     private Semaphore lock;
 
+    public static <S, T> Counter<T> create(Collection<S> items, ItemMapping<S, T> mapping) {
+        Counter<T> result = new Counter<>();
+        for (S item : items) {
+            result.inc(mapping.mapItem(item));
+        }
+        return result;
+    }
+
     public Counter() {
         counts = new HashMap<>();
         cachedTotal = -1;
@@ -150,5 +158,9 @@ public class Counter<T extends Object> {
         for (Pair<T, Long> value : values) {
             counts.put(value.getFirst(), value.getSecond());
         }
+    }
+
+    public interface ItemMapping<S, T> {
+        T mapItem(S item);
     }
 }

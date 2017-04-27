@@ -3,6 +3,7 @@ package be.bagofwords.counts;
 import be.bagofwords.ui.UI;
 import be.bagofwords.util.Pair;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import it.unimi.dsi.fastutil.Function;
 
 import java.util.*;
 import java.util.concurrent.Semaphore;
@@ -12,6 +13,24 @@ public class DoubleCounter<T extends Object> {
     private final Map<T, Double> counts;
     private double cachedTotal;
     private Semaphore lock;
+
+    public static <S, T> DoubleCounter<T> create(Collection<S> items, ItemMapping<S, T> mapping) {
+        DoubleCounter<T> result = new DoubleCounter<>();
+        for (S item : items) {
+            Pair<T, Double> counts = mapping.mapItem(item);
+            result.inc(counts.getF(), counts.getS());
+        }
+        return result;
+    }
+
+    public static <S, T> DoubleCounter<T> create(Collection<S> items, Function<S, Pair<T, Double>> mapping) {
+        DoubleCounter<T> result = new DoubleCounter<>();
+        for (S item : items) {
+            Pair<T, Double> counts = mapping.get(item);
+            result.inc(counts.getF(), counts.getS());
+        }
+        return result;
+    }
 
     public DoubleCounter() {
         counts = new HashMap<>();
@@ -150,5 +169,9 @@ public class DoubleCounter<T extends Object> {
         for (Pair<T, Double> value : values) {
             counts.put(value.getFirst(), value.getSecond());
         }
+    }
+
+    public interface ItemMapping<S, T> {
+        Pair<T, Double> mapItem(S item);
     }
 }
