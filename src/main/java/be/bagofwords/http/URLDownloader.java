@@ -1,6 +1,6 @@
 package be.bagofwords.http;
 
-import be.bagofwords.ui.UI;
+import be.bagofwords.logging.Log;
 import be.bagofwords.util.URLUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -228,7 +228,7 @@ public class URLDownloader {
             content = new String(rawcontent, encoding);
             content = content.replace("\r", "");
         } catch (UnsupportedEncodingException e) {
-            UI.writeError("Problem while reading url " + getURL() + " with encoding " + encoding, e);
+            Log.e("Problem while reading url " + getURL() + " with encoding " + encoding, e);
             status = -15;
         }
     }
@@ -369,13 +369,13 @@ public class URLDownloader {
                     break;
                 chunkLen = chunkLen * 16 + Integer.valueOf("" + (char) rawcontent[i], 16);
             }
-            //UI.write("chunklen: "+chunkLen);
+            //Log.i("chunklen: "+chunkLen);
             chunkLenTot += chunkLen;
             endOfLenSpec += 2; //0x10 Ox13
             lastlength = chunkLen;
             p = endOfLenSpec + chunkLen + 2;//+2 for 0x10 0x13. Assert it really is.
         }
-        //UI.write("tot: "+chunkLenTot);
+        //Log.i("tot: "+chunkLenTot);
         byte[] newrawcontent = new byte[chunkLenTot];
         lastlength = -1;
         p = 0;
@@ -390,7 +390,7 @@ public class URLDownloader {
                     break;
                 chunkLen = chunkLen * 16 + Integer.valueOf("" + (char) rawcontent[i], 16);
             }
-            //UI.write("chunklen: "+chunkLen);
+            //Log.i("chunklen: "+chunkLen);
             endOfLenSpec += 2; //0x10 Ox13
             for (int i = 0; i < chunkLen; i++)
                 newrawcontent[nrwi++] = rawcontent[endOfLenSpec + i];

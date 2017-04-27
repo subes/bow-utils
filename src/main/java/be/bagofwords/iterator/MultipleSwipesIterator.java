@@ -1,6 +1,6 @@
 package be.bagofwords.iterator;
 
-import be.bagofwords.ui.UI;
+import be.bagofwords.logging.Log;
 
 import java.util.Iterator;
 
@@ -25,7 +25,7 @@ public class MultipleSwipesIterator<T extends Object> implements Iterator<T> {
             if (currIt.hasNext()) {
                 return currIt.next();
             } else {
-                UI.write("Finished swipe " + currentSwipe + " of " + numOfSwipes);
+                Log.i("Finished swipe " + currentSwipe + " of " + numOfSwipes);
                 currentSwipe++;
                 if (currentSwipe < numOfSwipes) {
                     currIt = iterable.iterator();

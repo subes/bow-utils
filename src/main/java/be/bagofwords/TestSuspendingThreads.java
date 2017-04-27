@@ -1,6 +1,6 @@
 package be.bagofwords;
 
-import be.bagofwords.ui.UI;
+import be.bagofwords.logging.Log;
 import be.bagofwords.util.Utils;
 
 import java.util.concurrent.CountDownLatch;
@@ -63,7 +63,7 @@ public class TestSuspendingThreads {
             doTask();
             sum += System.currentTimeMillis() - start;
         }
-        UI.write("Avg took " + (sum / 10) + " ms");
+        Log.i("Avg took " + (sum / 10) + " ms");
     }
 
     private static void doTask() {

@@ -1,12 +1,8 @@
 package be.bagofwords.util;
 
-import be.bagofwords.ui.UI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import be.bagofwords.logging.Log;
 
 public abstract class SafeThread extends Thread {
-
-    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private boolean terminateRequested;
     private boolean finished;
@@ -25,7 +21,7 @@ public abstract class SafeThread extends Thread {
         try {
             runInt();
         } catch (Throwable t) {
-            UI.writeError("Received exception while running " + getName(), t);
+            Log.e("Received exception while running " + getName(), t);
         } finally {
             finished = true;
         }
@@ -65,7 +61,7 @@ public abstract class SafeThread extends Thread {
         while (wasStarted() && !isFinished() && (timeToWait == -1 || System.currentTimeMillis() - start < timeToWait)) {
             Utils.threadSleep(10);
             if (System.currentTimeMillis() - timeOfLastMessage > 10 * 1000 && isTerminateRequested()) {
-                UI.write("Waiting for thread " + getName() + " to finish");
+                Log.i("Waiting for thread " + getName() + " to finish");
                 timeOfLastMessage = System.currentTimeMillis();
             }
         }

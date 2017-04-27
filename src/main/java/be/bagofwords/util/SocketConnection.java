@@ -1,6 +1,6 @@
 package be.bagofwords.util;
 
-import be.bagofwords.ui.UI;
+import be.bagofwords.logging.Log;
 import org.xerial.snappy.Snappy;
 
 import java.io.*;
@@ -120,7 +120,7 @@ public class SocketConnection implements Closeable {
     public void writeLong(long value) throws IOException {
         actionsBeforeWrite();
         if (debug) {
-            UI.write("RI --> " + value);
+            Log.i("RI --> " + value);
         }
         os.writeLong(value);
         actionsAfterWrite();
@@ -139,7 +139,7 @@ public class SocketConnection implements Closeable {
     public void writeInt(int value) throws IOException {
         actionsBeforeWrite();
         if (debug) {
-            UI.write("RI --> " + value);
+            Log.i("RI --> " + value);
         }
         os.writeInt(value);
         actionsAfterWrite();
@@ -149,7 +149,7 @@ public class SocketConnection implements Closeable {
         checksBeforeRead();
         long value = is.readLong();
         if (debug) {
-            UI.write("RI <-- " + value);
+            Log.i("RI <-- " + value);
         }
         return value;
     }
@@ -171,7 +171,7 @@ public class SocketConnection implements Closeable {
         checksBeforeRead();
         int value = is.readInt();
         if (debug) {
-            UI.write("RI <-- " + value);
+            Log.i("RI <-- " + value);
         }
         return value;
     }
@@ -180,7 +180,7 @@ public class SocketConnection implements Closeable {
         checksBeforeRead();
         double value = is.readDouble();
         if (debug) {
-            UI.write("RI <-- " + value);
+            Log.i("RI <-- " + value);
         }
         return value;
     }
@@ -188,7 +188,7 @@ public class SocketConnection implements Closeable {
     public void writeDouble(double value) throws IOException {
         actionsBeforeWrite();
         if (debug) {
-            UI.write("RI --> " + value);
+            Log.i("RI --> " + value);
         }
         os.writeDouble(value);
         actionsAfterWrite();
@@ -197,7 +197,7 @@ public class SocketConnection implements Closeable {
     public void writeByte(byte value) throws IOException {
         actionsBeforeWrite();
         if (debug) {
-            UI.write("RI --> " + value);
+            Log.i("RI --> " + value);
         }
         os.writeByte(value);
         actionsAfterWrite();
@@ -207,7 +207,7 @@ public class SocketConnection implements Closeable {
         checksBeforeRead();
         byte value = is.readByte();
         if (debug) {
-            UI.write("RI <-- " + value);
+            Log.i("RI <-- " + value);
         }
         return value;
     }
@@ -215,7 +215,7 @@ public class SocketConnection implements Closeable {
     public void writeFloat(float value) throws IOException {
         actionsBeforeWrite();
         if (debug) {
-            UI.write("RI --> " + value);
+            Log.i("RI --> " + value);
         }
         os.writeFloat(value);
         actionsAfterWrite();
@@ -225,7 +225,7 @@ public class SocketConnection implements Closeable {
         checksBeforeRead();
         float value = is.readFloat();
         if (debug) {
-            UI.write("RI <-- " + value);
+            Log.i("RI <-- " + value);
         }
         return value;
     }
@@ -252,7 +252,7 @@ public class SocketConnection implements Closeable {
             numOfBytesRead += extraBytesRead;
         }
         if (debug) {
-            UI.write("RI <-- " + objectAsBytes.length + " bytes");
+            Log.i("RI <-- " + objectAsBytes.length + " bytes");
         }
         if (isCompressed) {
             objectAsBytes = Snappy.uncompress(objectAsBytes);
@@ -288,7 +288,7 @@ public class SocketConnection implements Closeable {
             }
         }
         if (debug) {
-            UI.write("RI --> " + objectAsBytes.length + " bytes");
+            Log.i("RI --> " + objectAsBytes.length + " bytes");
         }
         os.write(objectAsBytes);
         actionsAfterWrite();
@@ -304,13 +304,13 @@ public class SocketConnection implements Closeable {
         }
         int length = is.readInt();
         if (length > 50000000) {
-            UI.write("About to read a byte array of length " + length);
+            Log.i("About to read a byte array of length " + length);
         }
         byte[] bytes = new byte[length];
         is.readFully(bytes);
         if (debug) {
             String message = new String(bytes, "UTF-8");
-            UI.write("RI <-- " + message.substring(0, Math.min(message.length(), 200)).replaceAll("\\W", "."));
+            Log.i("RI <-- " + message.substring(0, Math.min(message.length(), 200)).replaceAll("\\W", "."));
         }
         return bytes;
     }
@@ -333,7 +333,7 @@ public class SocketConnection implements Closeable {
         }
         if (debug) {
             String message = new String(bytes, "UTF-8");
-            UI.write("RI --> " + message.substring(0, Math.min(message.length(), 200)).replaceAll("\\W", "."));
+            Log.i("RI --> " + message.substring(0, Math.min(message.length(), 200)).replaceAll("\\W", "."));
         }
         if (bytes.length > 1e9) {
             throw new RuntimeException("Currently objects larger then 1 GB are not supported...");
@@ -356,7 +356,7 @@ public class SocketConnection implements Closeable {
         checksBeforeRead();
         boolean result = is.readBoolean();
         if (debug) {
-            UI.write("RI <-- " + result);
+            Log.i("RI <-- " + result);
         }
         return result;
     }
@@ -364,7 +364,7 @@ public class SocketConnection implements Closeable {
     public void writeBoolean(boolean value) throws IOException {
         actionsBeforeWrite();
         if (debug) {
-            UI.write("RI --> " + value);
+            Log.i("RI --> " + value);
         }
         os.writeBoolean(value);
         actionsAfterWrite();

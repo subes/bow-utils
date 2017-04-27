@@ -1,6 +1,6 @@
 package be.bagofwords.util;
 
-import be.bagofwords.ui.UI;
+import be.bagofwords.logging.Log;
 
 import java.util.concurrent.Semaphore;
 
@@ -32,7 +32,7 @@ public class DataLock implements SegmentedLock {
         int lockInd = getLockInd(key);
         locks[lockInd].acquireUninterruptibly(1);
         if (debug) {
-            UI.writeStackTrace("Locked read " + lockInd);
+            writeStackTrace("Locked read " + lockInd);
         }
     }
 
@@ -40,7 +40,7 @@ public class DataLock implements SegmentedLock {
         int lockInd = getLockInd(key);
         locks[lockInd].release(1);
         if (debug) {
-            UI.writeStackTrace("Unlocked read " + lockInd);
+            writeStackTrace("Unlocked read " + lockInd);
         }
     }
 
@@ -48,7 +48,7 @@ public class DataLock implements SegmentedLock {
         int lockInd = getLockInd(key);
         locks[lockInd].acquireUninterruptibly(NUM_OF_READ_PERMITS);
         if (debug) {
-            UI.writeStackTrace("Locked write " + lockInd);
+            writeStackTrace("Locked write " + lockInd);
         }
     }
 
@@ -56,7 +56,7 @@ public class DataLock implements SegmentedLock {
         int lockInd = getLockInd(key);
         locks[lockInd].release(NUM_OF_READ_PERMITS);
         if (debug) {
-            UI.writeStackTrace("Unlocked write " + lockInd);
+            writeStackTrace("Unlocked write " + lockInd);
         }
     }
 
@@ -72,7 +72,7 @@ public class DataLock implements SegmentedLock {
             lock.acquireUninterruptibly(1);
         }
         if (debug) {
-            UI.writeStackTrace("Locked all read");
+            writeStackTrace("Locked all read");
         }
     }
 
@@ -81,7 +81,7 @@ public class DataLock implements SegmentedLock {
             lock.release(1);
         }
         if (debug) {
-            UI.writeStackTrace("Unlocked all read");
+            writeStackTrace("Unlocked all read");
         }
     }
 
@@ -90,7 +90,7 @@ public class DataLock implements SegmentedLock {
             lock.acquireUninterruptibly(NUM_OF_READ_PERMITS);
         }
         if (debug) {
-            UI.writeStackTrace("Locked all write");
+            writeStackTrace("Locked all write");
         }
     }
 
@@ -99,7 +99,14 @@ public class DataLock implements SegmentedLock {
             lock.release(NUM_OF_READ_PERMITS);
         }
         if (debug) {
-            UI.writeStackTrace("Unlocked all write");
+            writeStackTrace("Unlocked all write");
+        }
+    }
+
+    private void writeStackTrace(String message) {
+        synchronized (Log.LOCK) {
+            Log.i(message);
+            Log.i(Utils.getStackTrace(new RuntimeException("Dummy")));
         }
     }
 }

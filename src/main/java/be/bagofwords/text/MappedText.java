@@ -1,6 +1,6 @@
 package be.bagofwords.text;
 
-import be.bagofwords.ui.UI;
+import be.bagofwords.logging.Log;
 import be.bagofwords.util.Pair;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
@@ -134,9 +134,9 @@ public class MappedText implements Serializable, Text {
         for (int i = 0; i < text.length; i++) {
             Pair<Integer, Integer> mapping = getMappingToOrig(i, i + 1);
             if (mapping.getFirst() != -1 && mapping.getSecond() != -1) {
-                UI.write(text[i] + " " + orig.substring(mapping.getFirst(), mapping.getSecond()));
+                Log.i(text[i] + " " + orig.substring(mapping.getFirst(), mapping.getSecond()));
             } else {
-                UI.write(text[i]);
+                Log.i(text[i]+"");
             }
         }
     }
@@ -146,9 +146,9 @@ public class MappedText implements Serializable, Text {
         for (int i = 0; i < orig.length(); i++) {
             Pair<Integer, Integer> mapping = getMappingFromOrig(i, i + 1);
             if (mapping.getFirst() == -1 || mapping.getSecond() == -1)
-                UI.write(orig.charAt(i));
+                Log.i(orig.charAt(i)+"");
             else
-                UI.write(orig.charAt(i) + " " + curr.substring(mapping.getFirst(), mapping.getSecond()));
+                Log.i(orig.charAt(i) + " " + curr.substring(mapping.getFirst(), mapping.getSecond()));
         }
     }
 

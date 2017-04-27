@@ -1,6 +1,6 @@
 package be.bagofwords.counts;
 
-import be.bagofwords.ui.UI;
+import be.bagofwords.logging.Log;
 import be.bagofwords.util.NumUtils;
 
 import java.util.ArrayList;
@@ -62,18 +62,18 @@ public class BinComputer {
                 }
             }
             if (allSameValue) {
-                UI.write("no bins (all values have value=" + sameVal + ") found " + counts[0] + " instances");
+                Log.i("no bins (all values have value=" + sameVal + ") found " + counts[0] + " instances");
             } else {
-                UI.write("no bins? found " + counts[0] + " instances");
+                Log.i("no bins? found " + counts[0] + " instances");
             }
         } else {
             for (int i = 0; i < counts.length; i++) {
                 if (i == 0)
-                    UI.write("... to " + bins[i] + " has " + counts[i] + " instances.");
+                    Log.i("... to " + bins[i] + " has " + counts[i] + " instances.");
                 else if (i == bins.length)
-                    UI.write(bins[i - 1] + " to ... has " + counts[i] + " instances.");
+                    Log.i(bins[i - 1] + " to ... has " + counts[i] + " instances.");
                 else
-                    UI.write(bins[i - 1] + " to " + bins[i] + " has " + counts[i] + " instances.");
+                    Log.i(bins[i - 1] + " to " + bins[i] + " has " + counts[i] + " instances.");
             }
         }
     }

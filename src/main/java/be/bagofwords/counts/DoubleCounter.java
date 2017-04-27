@@ -1,6 +1,6 @@
 package be.bagofwords.counts;
 
-import be.bagofwords.ui.UI;
+import be.bagofwords.logging.Log;
 import be.bagofwords.util.Pair;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import it.unimi.dsi.fastutil.Function;
@@ -64,7 +64,7 @@ public class DoubleCounter<T extends Object> {
             }
         });
         for (Map.Entry<T, Double> s : orderedCounts) {
-            UI.write(s.getKey() + " (" + s.getValue() + ")");
+            Log.i(s.getKey() + " (" + s.getValue() + ")");
         }
     }
 

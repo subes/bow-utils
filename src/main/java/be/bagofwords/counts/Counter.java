@@ -1,6 +1,6 @@
 package be.bagofwords.counts;
 
-import be.bagofwords.ui.UI;
+import be.bagofwords.logging.Log;
 import be.bagofwords.util.Pair;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -53,7 +53,7 @@ public class Counter<T extends Object> {
             }
         });
         for (Map.Entry<T, Long> s : orderedCounts) {
-            UI.write(s.getKey() + " (" + s.getValue() + ")");
+            Log.i(s.getKey() + " (" + s.getValue() + ")");
         }
     }
 

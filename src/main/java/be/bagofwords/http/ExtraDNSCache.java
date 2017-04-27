@@ -1,6 +1,6 @@
 package be.bagofwords.http;
 
-import be.bagofwords.ui.UI;
+import be.bagofwords.logging.Log;
 import be.bagofwords.util.Pair;
 
 import java.net.InetAddress;
@@ -59,7 +59,7 @@ public class ExtraDNSCache {
                 synchronized (storedAddresses) {
                     storedAddresses.put(host, new Pair<InetAddress, Long>(null, System.currentTimeMillis()));
                 }
-                UI.write("[Dns lookup] " + host + " --> not found");
+                Log.i("[Dns lookup] " + host + " --> not found");
                 throw exp;
             } finally {
                 fetchDnsAddressLock.release();

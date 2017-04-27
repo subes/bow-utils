@@ -1,6 +1,6 @@
 package be.bagofwords.iterator;
 
-import be.bagofwords.ui.UI;
+import be.bagofwords.logging.Log;
 import be.bagofwords.util.Utils;
 
 import java.io.Closeable;
@@ -37,7 +37,7 @@ public abstract class CloseableIterator<T extends Object> implements Iterator<T>
     protected void finalize() throws Throwable {
         super.finalize();
         if (!wasClosed) {
-            UI.writeError("CloseableIterator was not closed! Was created in " + Utils.getStackTrace(creatingStackTrace));
+            Log.e("CloseableIterator was not closed! Was created in " + Utils.getStackTrace(creatingStackTrace));
             close();
         }
     }
