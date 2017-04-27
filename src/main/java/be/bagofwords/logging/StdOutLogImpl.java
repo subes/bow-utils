@@ -7,7 +7,7 @@ import java.io.PrintStream;
 /**
  * Created by koen on 27/04/17.
  */
-public class SdtOutLogImpl implements LogImpl {
+public class StdOutLogImpl implements LogImpl {
 
     @Override
     public void log(LogLevel level, Class logger, String message, Throwable throwable) {
