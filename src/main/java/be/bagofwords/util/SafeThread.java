@@ -6,38 +6,41 @@ public abstract class SafeThread extends Thread {
 
     private boolean terminateRequested;
     private boolean finished;
-    private boolean started;
 
     public SafeThread(String name, boolean isDaemonThread) {
         super(name);
         super.setDaemon(isDaemonThread);
         finished = false;
-        started = false;
         terminateRequested = false;
     }
 
     public void run() {
-        started = true;
         try {
-            runInt();
+            runImpl();
         } catch (Throwable t) {
-            Log.e("Received exception while running " + getName(), t);
+            Log.e("Unexpected exception while running " + getName(), t);
         } finally {
+            try {
+                cleanUp();
+            } catch (Throwable t) {
+                Log.e("Unexpected exception while cleaning up " + getName(), t);
+            }
             finished = true;
         }
     }
 
     @Override
     public void interrupt() {
-        terminate();
-    }
-
-    public void terminate() {
         terminateRequested = true;
         doTerminate();
+        super.interrupt();
     }
 
     protected void doTerminate() {
+        //Default implementation is empty
+    }
+
+    public void cleanUp() {
         //Default implementation is empty
     }
 
@@ -49,20 +52,22 @@ public abstract class SafeThread extends Thread {
         return finished;
     }
 
-    public boolean wasStarted() {
-        return started;
-    }
-
-    protected abstract void runInt() throws Exception;
+    protected abstract void runImpl() throws Exception;
 
     public void waitForFinish(long timeToWait) {
         long start = System.currentTimeMillis();
-        long timeOfLastMessage = start;
-        while (wasStarted() && !isFinished() && (timeToWait == -1 || System.currentTimeMillis() - start < timeToWait)) {
-            Utils.threadSleep(10);
-            if (System.currentTimeMillis() - timeOfLastMessage > 10 * 1000 && isTerminateRequested()) {
+        while (!isFinished() && (timeToWait == -1 || System.currentTimeMillis() - start < timeToWait)) {
+            try {
+                long maxTimeToWait = 10 * 1000;
+                if (timeToWait != -1) {
+                    maxTimeToWait = Math.min(maxTimeToWait, timeToWait + start - System.currentTimeMillis());
+                }
+                this.join(maxTimeToWait);
+            } catch (InterruptedException e) {
+                //ok
+            }
+            if (isTerminateRequested()) {
                 Log.i("Waiting for thread " + getName() + " to finish");
-                timeOfLastMessage = System.currentTimeMillis();
             }
         }
     }
@@ -72,7 +77,7 @@ public abstract class SafeThread extends Thread {
     }
 
     public void terminateAndWaitForFinish() {
-        terminate();
+        interrupt();
         waitForFinish();
     }
 
