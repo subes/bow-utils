@@ -19,7 +19,7 @@ public class Log {
         Log.i("Set logging instance to " + logImpl);
     }
 
-    static LogImpl getInstance() {
+    public static LogImpl getInstance() {
         return INSTANCE;
     }
 

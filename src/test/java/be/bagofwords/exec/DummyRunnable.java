@@ -1,0 +1,32 @@
+package be.bagofwords.exec;
+
+import org.apache.commons.io.FileUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
+
+/**
+ * Created by koen on 28/04/17.
+ */
+public class DummyRunnable implements Runnable, Serializable {
+
+    public static String testFile = "/tmp/dummyRunnableTestFile.txt";
+
+    private final String message;
+
+    public DummyRunnable(String message) {
+        this.message = message;
+    }
+
+    @Override
+    public void run() {
+        DependencyClass dependency = new DependencyClass();
+        dependency.doSomething();
+        try {
+            FileUtils.write(new File(testFile), message, "UTF-8");
+        } catch (IOException exp) {
+            throw new RuntimeException("Failed to write to test file", exp);
+        }
+    }
+}
