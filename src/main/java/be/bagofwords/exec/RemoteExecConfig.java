@@ -1,11 +1,9 @@
 package be.bagofwords.exec;
 
-import org.apache.commons.io.IOUtils;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectOutputStream;
+import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -19,6 +17,7 @@ public class RemoteExecConfig {
     private final String executorClassName;
     private final Object executor;
     private Set<Class> requiredClasses = new HashSet<>();
+    private ClassSourceReader sourceReader = new ResourcesClassSourceReader();
 
     public static RemoteExecConfig create(Object executor) {
         return new RemoteExecConfig(executor);
@@ -28,18 +27,30 @@ public class RemoteExecConfig {
         this.executor = executor;
         Class<?> executorClass = executor.getClass();
         this.executorClassName = executorClass.getName();
-        this.requiredClasses.add(executorClass);
+        add(executorClass);
     }
 
     public RemoteExecConfig add(Class _class) {
+        if (_class.getEnclosingClass() != null) {
+            throw new RuntimeException("Can not add class " + _class + ": Using inner classes as remote classes is currently not supported");
+        }
+        Annotation annotation = _class.getAnnotation(RemoteClass.class);
+        if (annotation == null) {
+            throw new RuntimeException("Can not add class " + _class + ": Classes that need to run remotely need to be annotated with @RemoteClass");
+        }
         requiredClasses.add(_class);
         return this;
     }
 
+    public RemoteExecConfig sourceReader(ClassSourceReader sourceReader) {
+        this.sourceReader = sourceReader;
+        return this;
+    }
+
     public PackedRemoteExec pack() {
-        Map<String, byte[]> classDefinitions = new HashMap<>();
+        Map<String, String> classSources = new HashMap<>();
         for (Class _class : requiredClasses) {
-            classDefinitions.put(_class.getCanonicalName(), classToBytes(_class));
+            classSources.put(_class.getCanonicalName(), sourceReader.readSource(_class));
         }
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -47,26 +58,9 @@ public class RemoteExecConfig {
             oos.writeObject(executor);
             oos.close();
             byte[] serializedExecutor = bos.toByteArray();
-            return new PackedRemoteExec(executorClassName, serializedExecutor, classDefinitions);
+            return new PackedRemoteExec(executorClassName, serializedExecutor, classSources);
         } catch (IOException exp) {
             throw new PackException("Failed to serialize object " + executor, exp);
-        }
-    }
-
-    public byte[] classToBytes(Class _class) {
-        String name = _class.getName();
-        String classAsPath = name.replace('.', '/') + ".class";
-        InputStream is = getClass().getClassLoader().getResourceAsStream(classAsPath);
-        if (is == null) {
-            throw new PackException("Could not find class " + classAsPath);
-        }
-        try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            IOUtils.copy(is, bos);
-            bos.close();
-            return bos.toByteArray();
-        } catch (IOException exp) {
-            throw new PackException("Failed to serialize class " + name);
         }
     }
 }

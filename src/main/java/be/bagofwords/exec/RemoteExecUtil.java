@@ -1,10 +1,16 @@
+/*
+ * Created by Koen Deschacht (koendeschacht@gmail.com) 2017-5-3. For license
+ * information see the LICENSE file in the root folder of this repository.
+ */
+
 package be.bagofwords.exec;
+
+import be.bagofwords.exec.ExecutePackedRemoteExec;
+import be.bagofwords.exec.PackedRemoteExec;
+import be.bagofwords.exec.RemoteExecObjectInputStream;
 
 import java.io.ByteArrayInputStream;
 
-/**
- * Created by koen on 28/04/17.
- */
 public class RemoteExecUtil {
 
     public static Object loadRemoteRunner(PackedRemoteExec packedRemoteExec) {

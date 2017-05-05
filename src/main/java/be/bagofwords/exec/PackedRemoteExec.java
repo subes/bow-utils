@@ -11,13 +11,13 @@ public class PackedRemoteExec {
 
     public final String executorClassName;
     public final byte[] executor;
-    public final Map<String, byte[]> classDefinitions;
+    public final Map<String, String> classSources;
 
     public PackedRemoteExec(@JsonProperty("executorClassName") String executorClassName,
                             @JsonProperty("executor") byte[] executor,
-                            @JsonProperty("classDefinitions") Map<String, byte[]> classDefinitions) {
+                            @JsonProperty("classDefinitions") Map<String, String> classSources) {
         this.executorClassName = executorClassName;
         this.executor = executor;
-        this.classDefinitions = classDefinitions;
+        this.classSources = classSources;
     }
 }

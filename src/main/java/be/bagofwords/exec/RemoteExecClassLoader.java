@@ -1,18 +1,40 @@
-package be.bagofwords.exec;
-
-/**
- * Created by koen on 12/03/17.
+/*
+ * Created by Koen Deschacht (koendeschacht@gmail.com) 2017-5-3. For license
+ * information see the LICENSE file in the root folder of this repository.
  */
 
-import java.io.InputStream;
+package be.bagofwords.exec;
+
+import org.apache.commons.io.FileUtils;
+
+import javax.tools.*;
+import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RemoteExecClassLoader extends ClassLoader {
 
-    private final PackedRemoteExec packedRemoteExec;
+    private final File compileDir;
+    private URLClassLoader actualClassLoader;
 
     public RemoteExecClassLoader(PackedRemoteExec packedRemoteExec, ClassLoader parentClassLoader) {
         super(parentClassLoader);
-        this.packedRemoteExec = packedRemoteExec;
+        try {
+            this.compileDir = Files.createTempDirectory("java_compile").toFile();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to create temporary root", e);
+        }
+        compileFiles(packedRemoteExec);
+        try {
+            actualClassLoader = new URLClassLoader(new URL[]{compileDir.toURI().toURL()});
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("Unexpected error", e); //Should not occur
+        }
     }
 
     @Override
@@ -22,14 +44,50 @@ public class RemoteExecClassLoader extends ClassLoader {
 
     @Override
     public Class loadClass(String name) throws ClassNotFoundException {
-        if (packedRemoteExec.classDefinitions.containsKey(name)) {
-            System.out.println("Loading class '" + name + "' from packaged remote");
-            byte[] classAsBytes = packedRemoteExec.classDefinitions.get(name);
-            Class c = defineClass(name, classAsBytes, 0, classAsBytes.length);
-            resolveClass(c);
-            return c;
+        File compiledFile = new File(compileDir, getFilePathNoExtension(name) + ".class");
+        if (compiledFile.exists()) {
+            return actualClassLoader.loadClass(name);
         } else {
             return super.loadClass(name);
         }
+    }
+
+    private void compileFiles(PackedRemoteExec packedRemoteExec) {
+        try {
+            List<File> sourceFiles = new ArrayList<>();
+            for (String className : packedRemoteExec.classSources.keySet()) {
+                String filePathNoExtension = getFilePathNoExtension(className);
+                File sourceFile = new File(compileDir, filePathNoExtension + ".java");
+                File parentDir = sourceFile.getParentFile();
+                if (!parentDir.exists() && !parentDir.mkdirs()) {
+                    throw new RuntimeException("Could not create directory " + parentDir.getAbsolutePath());
+                }
+                FileUtils.write(sourceFile, packedRemoteExec.classSources.get(className), StandardCharsets.UTF_8);
+                sourceFiles.add(sourceFile);
+            }
+            DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+            JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+            StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null);
+
+            List<String> optionList = new ArrayList<>();
+            optionList.add("-classpath");
+            optionList.add(System.getProperty("java.class.path"));
+            optionList.add("-proc:none");
+            Writer writer = new StringWriter();
+
+            Iterable<? extends JavaFileObject> compilationUnit = fileManager.getJavaFileObjectsFromFiles(sourceFiles);
+            JavaCompiler.CompilationTask task = compiler.getTask(null, fileManager, diagnostics, optionList, null, compilationUnit);
+            boolean success = task.call();
+            writer.close();
+            if (!success) {
+                throw new RuntimeException("Failed to compile source files " + writer.toString());
+            }
+        } catch (IOException exp) {
+            throw new RuntimeException("Failed to compile source files", exp);
+        }
+    }
+
+    private String getFilePathNoExtension(String className) {
+        return className.replaceAll("\\.", File.separatorChar + "");
     }
 }

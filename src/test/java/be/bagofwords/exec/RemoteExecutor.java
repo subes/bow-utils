@@ -1,8 +1,11 @@
+/*
+ * Created by Koen Deschacht (koendeschacht@gmail.com) 2017-5-3. For license
+ * information see the LICENSE file in the root folder of this repository.
+ */
+
 package be.bagofwords.exec;
 
-/**
- * Created by koen on 28/04/17.
- */
+
 public class RemoteExecutor {
 
     public void exec(PackedRemoteExec packedRemoteExec) {
