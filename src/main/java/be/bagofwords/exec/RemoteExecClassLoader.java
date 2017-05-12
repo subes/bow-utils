@@ -76,11 +76,16 @@ public class RemoteExecClassLoader extends ClassLoader {
             Writer writer = new StringWriter();
 
             Iterable<? extends JavaFileObject> compilationUnit = fileManager.getJavaFileObjectsFromFiles(sourceFiles);
-            JavaCompiler.CompilationTask task = compiler.getTask(null, fileManager, diagnostics, optionList, null, compilationUnit);
+            JavaCompiler.CompilationTask task = compiler.getTask(writer, fileManager, diagnostics, optionList, null, compilationUnit);
             boolean success = task.call();
             writer.close();
             if (!success) {
-                throw new RuntimeException("Failed to compile source files " + writer.toString());
+                StringBuilder errMessage = new StringBuilder();
+                for (Diagnostic<?> diagnostic : diagnostics.getDiagnostics()) {
+                    errMessage.append(diagnostic);
+                    errMessage.append("\n");
+                }
+                throw new RuntimeException("Failed to compile source files " + writer.toString() + " " + errMessage.toString().trim());
             }
         } catch (IOException exp) {
             throw new RuntimeException("Failed to compile source files", exp);

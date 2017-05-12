@@ -63,4 +63,8 @@ public class RemoteExecConfig {
             throw new PackException("Failed to serialize object " + executor, exp);
         }
     }
+
+    public String getExecutorClassName() {
+        return executorClassName;
+    }
 }
