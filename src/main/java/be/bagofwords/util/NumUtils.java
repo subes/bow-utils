@@ -22,43 +22,9 @@ public class NumUtils {
     public static double[] getBorders(int numberOfBins, List<Double> counts) {
         Collections.sort(counts);
         if (!counts.isEmpty()) {
-            ArrayList<Integer> borderInds = new ArrayList<>();
-            boolean valuesLeft = true;
-            while (borderInds.size() < numberOfBins - 1 && valuesLeft) {
-                //Find next border
-                int maxSizeToSplit = 0;
-                int bestIndToSplit = -1;
-                for (int i = 0; i < borderInds.size() + 1; i++) {
-                    int startInd;
-                    int endInd;
-                    if (i > 0) {
-                        startInd = borderInds.get(i - 1);
-                    } else {
-                        startInd = 0;
-                    }
-                    if (i < borderInds.size()) {
-                        endInd = borderInds.get(i);
-                    } else {
-                        endInd = counts.size() - 1;
-                    }
-                    if (startInd < endInd - 1 && (endInd - startInd > maxSizeToSplit)) {
-                        int indToSplit = findBestSplit(counts, startInd, endInd);
-                        if (indToSplit != -1) {
-                            //Split found
-                            int sizeOfSplit = Math.min(indToSplit - startInd, endInd - indToSplit);
-                            if (sizeOfSplit > maxSizeToSplit) {
-                                maxSizeToSplit = sizeOfSplit;
-                                bestIndToSplit = indToSplit;
-                            }
-                        }
-                    }
-                }
-                if (bestIndToSplit == -1) {
-                    valuesLeft = false;
-                } else {
-                    borderInds.add(bestIndToSplit);
-                    Collections.sort(borderInds);
-                }
+            List<Integer> borderInds = findBordersNaive(numberOfBins, counts);
+            if (borderInds == null) {
+                borderInds = findBorderIndsByRepeatedDividing(numberOfBins, counts);
             }
             double[] result = new double[borderInds.size()];
             for (int i = 0; i < result.length; i++) {
@@ -67,6 +33,73 @@ public class NumUtils {
             return result;
         } else
             return new double[]{0.0};
+    }
+
+    private static List<Integer> findBordersNaive(int numberOfBins, List<Double> counts) {
+        if (counts.size() < numberOfBins) {
+            return null;
+        }
+        List<Integer> borderInds = new ArrayList<>();
+        for (int i = 0; i < numberOfBins - 1; i++) {
+            int potentialInd = (int) Math.round((((double) counts.size()) / numberOfBins * (i + 1)));
+            if (potentialInd < counts.size()) {
+                borderInds.add(potentialInd);
+            } else {
+                return null;
+            }
+        }
+        //Check that all borders are different values
+        double prevValue = counts.get(borderInds.get(0));
+        for (int i = 1; i < borderInds.size(); i++) {
+            double value = counts.get(borderInds.get(i));
+            if (value == prevValue) {
+                return null;
+            }
+            prevValue = value;
+        }
+        return borderInds;
+    }
+
+    private static List<Integer> findBorderIndsByRepeatedDividing(int numberOfBins, List<Double> counts) {
+        ArrayList<Integer> borderInds = new ArrayList<>();
+        boolean valuesLeft = true;
+        while (borderInds.size() < numberOfBins - 1 && valuesLeft) {
+            //Find next border
+            int maxSizeToSplit = 0;
+            int bestIndToSplit = -1;
+            for (int i = 0; i < borderInds.size() + 1; i++) {
+                int startInd;
+                int endInd;
+                if (i > 0) {
+                    startInd = borderInds.get(i - 1);
+                } else {
+                    startInd = 0;
+                }
+                if (i < borderInds.size()) {
+                    endInd = borderInds.get(i);
+                } else {
+                    endInd = counts.size() - 1;
+                }
+                if (startInd < endInd - 1 && (endInd - startInd > maxSizeToSplit)) {
+                    int indToSplit = findBestSplit(counts, startInd, endInd);
+                    if (indToSplit != -1) {
+                        //Split found
+                        int sizeOfSplit = Math.min(indToSplit - startInd, endInd - indToSplit);
+                        if (sizeOfSplit > maxSizeToSplit) {
+                            maxSizeToSplit = sizeOfSplit;
+                            bestIndToSplit = indToSplit;
+                        }
+                    }
+                }
+            }
+            if (bestIndToSplit == -1) {
+                valuesLeft = false;
+            } else {
+                borderInds.add(bestIndToSplit);
+                Collections.sort(borderInds);
+            }
+        }
+        return borderInds;
     }
 
     private static int findBestSplit(List<Double> counts, int startInd, int endInd) {

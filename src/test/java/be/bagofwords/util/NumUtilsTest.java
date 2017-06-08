@@ -9,8 +9,7 @@ import java.util.List;
 public class NumUtilsTest {
 
     @Test
-    public void testGetBorders() throws Exception {
-
+    public void testGetBordersLotsOfSameValues() throws Exception {
         List<Double> counts = new ArrayList<>();
         for (int i = 0; i < 1000; i++) {
             if (i < 990) {
@@ -26,6 +25,22 @@ public class NumUtilsTest {
         Assert.assertEquals(0, NumUtils.getBin(borders, 1));
         Assert.assertEquals(1, NumUtils.getBin(borders, 990));
         Assert.assertEquals(9, NumUtils.getBin(borders, 999));
+    }
+
+    @Test
+    public void testGetBordersDifferentValues() throws Exception {
+        List<Double> counts = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            counts.add((double) i);
+        }
+
+        double[] borders = NumUtils.getBorders(10, counts);
+
+        Assert.assertEquals(9, borders.length);
+        for (int i = 0; i < 1000; i++) {
+            int expectedBin = i / 100;
+            Assert.assertEquals(i + " should be in bin " + expectedBin, expectedBin, NumUtils.getBin(borders, i), 0.01);
+        }
     }
 
     @Test
