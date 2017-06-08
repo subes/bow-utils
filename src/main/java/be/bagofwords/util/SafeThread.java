@@ -58,7 +58,7 @@ public abstract class SafeThread extends Thread {
         long start = System.currentTimeMillis();
         while (!isFinished() && (timeToWait == -1 || System.currentTimeMillis() - start < timeToWait)) {
             try {
-                long maxTimeToWait = 10 * 1000;
+                long maxTimeToWait = 10_000;
                 if (timeToWait != -1) {
                     maxTimeToWait = Math.min(maxTimeToWait, timeToWait + start - System.currentTimeMillis());
                 }
@@ -66,7 +66,7 @@ public abstract class SafeThread extends Thread {
             } catch (InterruptedException e) {
                 //ok
             }
-            if (isTerminateRequested()) {
+            if (!isFinished() && isTerminateRequested()) {
                 Log.i("Waiting for thread " + getName() + " to finish");
             }
         }
