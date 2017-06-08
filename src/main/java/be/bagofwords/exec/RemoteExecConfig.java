@@ -32,7 +32,7 @@ public class RemoteExecConfig {
 
     public RemoteExecConfig add(Class _class) {
         if (_class.getEnclosingClass() != null) {
-            throw new RuntimeException("Can not add class " + _class + ": Using inner classes as remote classes is currently not supported");
+            throw new RuntimeException("Can not add class " + _class + ": Using inner classes or lambda's as remote classes is currently not supported");
         }
         Annotation annotation = _class.getAnnotation(RemoteClass.class);
         if (annotation == null) {
