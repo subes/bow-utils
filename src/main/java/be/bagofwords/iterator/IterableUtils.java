@@ -251,6 +251,27 @@ public class IterableUtils {
         };
     }
 
+    public static <S, T> CloseableIterator<T> mapIterator(final CloseableIterator<S> iterator, final MappingFunction<S, T> mappingFunction) {
+        return new CloseableIterator<T>() {
+            @Override
+            protected void closeInt() {
+                iterator.close();
+            }
 
+            @Override
+            public boolean hasNext() {
+                return iterator.hasNext();
+            }
+
+            @Override
+            public T next() {
+                return mappingFunction.map(iterator.next());
+            }
+        };
+    }
+
+    public interface MappingFunction<S, T> {
+        T map(S s);
+    }
 
 }
