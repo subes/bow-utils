@@ -448,9 +448,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
             }
         }
         result.append(inputString.substring(last));
-        String finalResult = result.toString();
-        //assert (unescapeString(finalResult, escapeChar, mapping).equals(inputString)); //TODO remove for performance
-        return finalResult;
+        return result.toString();
     }
 
     private static String unescapeString(String inputString, char escapeChar, Map<Character, Character> mapping) {
