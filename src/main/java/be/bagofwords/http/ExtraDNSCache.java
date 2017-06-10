@@ -68,7 +68,6 @@ public class ExtraDNSCache {
         }
     }
 
-
     private static void cleanOldAddresses() {
         //Occasionally, we remove really old addresses :
         long now = System.currentTimeMillis();
@@ -92,6 +91,5 @@ public class ExtraDNSCache {
     private static boolean timeToClean() {
         return timeOfLastClean + Math.min(TIME_TO_KEEP_NEGATIVE_ADDRESSES, TIME_TO_KEEP_ADDRESSES) / 2 < System.currentTimeMillis();
     }
-
 
 }
