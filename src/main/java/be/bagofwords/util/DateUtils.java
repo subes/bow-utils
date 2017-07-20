@@ -1,5 +1,6 @@
 package be.bagofwords.util;
 
+import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -20,6 +21,14 @@ public class DateUtils extends org.apache.commons.lang3.time.DateUtils {
         date = DateUtils.setMinutes(date, minutes);
         date = DateUtils.setSeconds(date, seconds);
         return date;
+    }
+
+    public static Date createDate(String date) {
+        try {
+            return org.apache.commons.lang3.time.DateUtils.parseDate(date, "yyyy-MM-dd", "yyyy-MM-dd HH:mm", "yyyy-MM-dd HH:mm:ss");
+        } catch (ParseException e) {
+            throw new RuntimeException("Failed to parse date " + date, e);
+        }
     }
 
 }
