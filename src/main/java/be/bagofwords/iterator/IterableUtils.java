@@ -41,11 +41,7 @@ public class IterableUtils {
                 for (DataIterable<? extends T> iterable : iterables) {
                     iterators.add(iterable.iterator());
                 }
-                if (combineMethod == CombineMethod.SEQUENTIAL) {
-                    return new SequentialIteratorOfIterators<>(iterators);
-                } else {
-                    return new InterleavedIteratorOfIterators<>(iterators);
-                }
+                return IterableUtils.iterator(iterators, combineMethod);
             }
 
             @Override
@@ -57,6 +53,14 @@ public class IterableUtils {
                 return result;
             }
         };
+    }
+
+    public static <T extends Object> CloseableIterator<T> iterator(List<CloseableIterator<? extends T>> iterators, CombineMethod combineMethod) {
+        if (combineMethod == CombineMethod.SEQUENTIAL) {
+            return new SequentialIteratorOfIterators<>(iterators);
+        } else {
+            return new InterleavedIteratorOfIterators<>(iterators);
+        }
     }
 
     public static <T> CloseableIterator<T> iterator(final SimpleIterator<T> simpleIt) {
@@ -140,6 +144,10 @@ public class IterableUtils {
                 return iterator.next();
             }
         };
+    }
+
+    public static <T extends Object> CloseableIterator<T> iterator(Collection<T> collection) {
+        return iterator(collection.iterator());
     }
 
     public static <T extends Object> CloseableIterator<T> maxSizeIterator(final long maxIterations, final CloseableIterator<T> iterator) {
