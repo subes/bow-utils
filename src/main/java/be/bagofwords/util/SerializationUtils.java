@@ -299,6 +299,31 @@ public class SerializationUtils {
         return result;
     }
 
+    public static byte[] booleanToBytes(boolean value) {
+        byte[] bytes = new byte[1];
+        booleanToBytes(value, bytes, 0);
+        return bytes;
+    }
+
+    public static void booleanToBytes(boolean value, byte[] bytes, int offset) {
+        bytes[offset] = (byte) (value ? 1 : 0);
+    }
+
+    public static boolean bytesToBoolean(byte[] bytes) {
+        return bytesToBoolean(bytes, 0);
+    }
+
+    public static boolean bytesToBoolean(byte[] bytes, int offset) {
+        byte v = bytes[offset];
+        if (v == 0) {
+            return false;
+        } else if (v == 1) {
+            return true;
+        } else {
+            throw new RuntimeException("Incorrect byte value " + v + " to encode boolean value");
+        }
+    }
+
     public static byte[] intToBytes(int value) {
         byte[] bytes = new byte[4];
         bytes[0] = (byte) ((value >>> 24));
