@@ -333,6 +333,13 @@ public class SerializationUtils {
         return bytes;
     }
 
+    public static void intToBytes(int value, byte[] buffer, int offset) {
+        buffer[offset] = (byte) ((value >>> 24));
+        buffer[offset+1] = (byte) ((value >>> 16));
+        buffer[offset+2] = (byte) ((value >>> 8));
+        buffer[offset+3] = (byte) ((value));
+    }
+
     public static int bytesToInt(byte[] bytes) {
         return bytesToInt(bytes, 0);
     }

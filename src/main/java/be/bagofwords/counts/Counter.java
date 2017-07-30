@@ -163,4 +163,29 @@ public class Counter<T extends Object> {
     public interface ItemMapping<S, T> {
         T mapItem(S item);
     }
+
+    @Override
+    public String toString() {
+        List<Map.Entry<T, Long>> orderedCounts = new ArrayList<>(counts.entrySet());
+        Collections.sort(orderedCounts, new Comparator<Map.Entry<T, Long>>() {
+            @Override
+            public int compare(Map.Entry<T, Long> o1, Map.Entry<T, Long> o2) {
+                return -o1.getValue().compareTo(o2.getValue());
+            }
+        });
+        String result = "Counts=(";
+        for (int i = 0; i < orderedCounts.size(); i++) {
+            Map.Entry<T, Long> s = orderedCounts.get(i);
+            result += s.getKey() + "=" + s.getValue();
+            if (i < orderedCounts.size() - 1) {
+                if (result.length() < 1000) {
+                    result += ",";
+                } else {
+                    result += "...";
+                }
+            }
+        }
+        result += ")";
+        return result;
+    }
 }

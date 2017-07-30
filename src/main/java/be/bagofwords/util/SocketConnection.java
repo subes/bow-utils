@@ -298,6 +298,16 @@ public class SocketConnection implements Closeable {
         return readByteArrayImpl(true);
     }
 
+    public byte[] readByteArray(int length) throws IOException {
+        checksBeforeRead();
+        if (length > 50000000) {
+            Log.i("About to read a byte array of length " + length);
+        }
+        byte[] bytes = new byte[length];
+        is.readFully(bytes);
+        return bytes;
+    }
+
     private byte[] readByteArrayImpl(boolean doChecksBeforeRead) throws IOException {
         if (doChecksBeforeRead) {
             checksBeforeRead();
@@ -325,6 +335,11 @@ public class SocketConnection implements Closeable {
 
     public void writeByteArray(byte[] bytes) throws IOException {
         writeByteArrayImpl(bytes, true);
+    }
+
+    public void writeByteArray(byte[] bytes, int length) throws IOException {
+        actionsAfterWrite();
+        os.write(bytes, 0, length);
     }
 
     public void writeByteArrayImpl(byte[] bytes, boolean doActionsBeforeWrite) throws IOException {

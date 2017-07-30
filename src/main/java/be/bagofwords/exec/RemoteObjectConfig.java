@@ -12,25 +12,25 @@ import java.util.Set;
 /**
  * Created by koen on 28/04/17.
  */
-public class RemoteExecConfig {
+public class RemoteObjectConfig {
 
-    private final String executorClassName;
-    private final Object executor;
+    private final String objectClassName;
+    private final Object object;
     private Set<Class> requiredClasses = new HashSet<>();
     private ClassSourceReader sourceReader = new ResourcesClassSourceReader();
 
-    public static RemoteExecConfig create(Object executor) {
-        return new RemoteExecConfig(executor);
+    public static RemoteObjectConfig create(Object object) {
+        return new RemoteObjectConfig(object);
     }
 
-    private RemoteExecConfig(Object executor) {
-        this.executor = executor;
-        Class<?> executorClass = executor.getClass();
-        this.executorClassName = executorClass.getName();
-        add(executorClass);
+    private RemoteObjectConfig(Object object) {
+        this.object = object;
+        Class<?> objectClass = object.getClass();
+        this.objectClassName = objectClass.getName();
+        add(objectClass);
     }
 
-    public RemoteExecConfig add(Class _class) {
+    public RemoteObjectConfig add(Class _class) {
         if (_class.getEnclosingClass() != null) {
             throw new RuntimeException("Can not add class " + _class + ": Using inner classes or lambda's as remote classes is currently not supported");
         }
@@ -42,12 +42,12 @@ public class RemoteExecConfig {
         return this;
     }
 
-    public RemoteExecConfig sourceReader(ClassSourceReader sourceReader) {
+    public RemoteObjectConfig sourceReader(ClassSourceReader sourceReader) {
         this.sourceReader = sourceReader;
         return this;
     }
 
-    public PackedRemoteExec pack() {
+    public PackedRemoteObject pack() {
         Map<String, String> classSources = new HashMap<>();
         for (Class _class : requiredClasses) {
             classSources.put(_class.getCanonicalName(), sourceReader.readSource(_class));
@@ -55,16 +55,16 @@ public class RemoteExecConfig {
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             ObjectOutputStream oos = new ObjectOutputStream(bos);
-            oos.writeObject(executor);
+            oos.writeObject(object);
             oos.close();
             byte[] serializedExecutor = bos.toByteArray();
-            return new PackedRemoteExec(executorClassName, serializedExecutor, classSources);
+            return new PackedRemoteObject(objectClassName, serializedExecutor, classSources);
         } catch (IOException exp) {
-            throw new PackException("Failed to serialize object " + executor, exp);
+            throw new PackException("Failed to serialize object " + object, exp);
         }
     }
 
-    public String getExecutorClassName() {
-        return executorClassName;
+    public String getObjectClassName() {
+        return objectClassName;
     }
 }

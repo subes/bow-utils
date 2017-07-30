@@ -8,11 +8,11 @@ import java.io.ObjectStreamClass;
 /**
  * Created by koen on 28/04/17.
  */
-public class RemoteExecObjectInputStream extends ObjectInputStream {
+public class RemoteObjectInputStream extends ObjectInputStream {
 
     private ClassLoader loader;
 
-    public RemoteExecObjectInputStream(InputStream in, ClassLoader loader) throws IOException {
+    public RemoteObjectInputStream(InputStream in, ClassLoader loader) throws IOException {
         super(in);
         this.loader = loader;
     }
@@ -23,7 +23,11 @@ public class RemoteExecObjectInputStream extends ObjectInputStream {
     protected Class resolveClass(ObjectStreamClass classDesc)
             throws IOException, ClassNotFoundException {
         String className = classDesc.getName();
-        return loader.loadClass(className);
+        try {
+            return loader.loadClass(className);
+        } catch (ClassNotFoundException exp) {
+            return super.resolveClass(classDesc);
+        }
     }
 
 }

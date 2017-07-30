@@ -5,6 +5,7 @@
 
 package be.bagofwords.exec;
 
+import be.bagofwords.logging.Log;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -17,6 +18,7 @@ public class DummyRunnable implements Runnable, Serializable {
     public static String testFile = "/tmp/dummyRunnableTestFile.txt";
 
     private final String message;
+    private final Object[] someClasses = new Object[0]; //Added this because array gave problems at some point
 
     public DummyRunnable(String message) {
         this.message = message;
@@ -27,6 +29,8 @@ public class DummyRunnable implements Runnable, Serializable {
         DependencyClass dependency = new DependencyClass();
         dependency.doSomething();
         try {
+            System.out.println("Dummy runnable class " + DummyRunnable.class);
+            Log.i("Hi there from dummy runnable!");
             FileUtils.write(new File(testFile), message, "UTF-8");
         } catch (IOException exp) {
             throw new RuntimeException("Failed to write to test file", exp);

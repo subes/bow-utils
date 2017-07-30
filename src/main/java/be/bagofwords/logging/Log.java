@@ -95,12 +95,16 @@ public class Log {
         log(ERROR, logger.getClass(), message, throwable);
     }
 
-    private static void log(LogLevel level, String message, Throwable throwable) {
+    public static void log(LogLevel level, String message) {
+        log(level, message, null);
+    }
+
+    public static void log(LogLevel level, String message, Throwable throwable) {
         Class logger = LogUtils.callingClass();
         log(level, logger, message, throwable);
     }
 
-    private static void log(LogLevel level, Class logger, String message, Throwable throwable) {
+    public static void log(LogLevel level, Class logger, String message, Throwable throwable) {
         synchronized (LOCK) {
             INSTANCE.log(level, logger, message, throwable);
         }
