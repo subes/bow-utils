@@ -7,11 +7,11 @@ import static be.bagofwords.logging.LogLevel.*;
  */
 public class Log {
 
-    private static LogImpl DEFAULT_INSTANCE = new Slf4jLogImpl();
-    private static LogImpl INSTANCE = DEFAULT_INSTANCE;
+    private static LogAdapter DEFAULT_INSTANCE = new Slf4jLogImpl();
+    private static LogAdapter INSTANCE = DEFAULT_INSTANCE;
     public static final Object LOCK = new Object();
 
-    public static void setInstance(LogImpl logImpl) {
+    public static void setInstance(LogAdapter logImpl) {
         if (INSTANCE != DEFAULT_INSTANCE) {
             throw new IllegalArgumentException("Instance has already been set to " + INSTANCE);
         }
@@ -19,7 +19,7 @@ public class Log {
         Log.i("Set logging instance to " + logImpl);
     }
 
-    public static LogImpl getInstance() {
+    public static LogAdapter getInstance() {
         return INSTANCE;
     }
 
@@ -102,6 +102,12 @@ public class Log {
     public static void log(LogLevel level, String message, Throwable throwable) {
         Class logger = LogUtils.callingClass();
         log(level, logger, message, throwable);
+    }
+
+    public static void log(LogLevel level, String logger, String message, Throwable throwable) {
+        synchronized (LOCK) {
+            INSTANCE.log(level, logger, message, throwable);
+        }
     }
 
     public static void log(LogLevel level, Class logger, String message, Throwable throwable) {

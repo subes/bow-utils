@@ -13,11 +13,14 @@ public class RemoteLogStatement {
     public LogLevel level;
     public String message;
     public String[] stackTrace;
+    public String logger;
 
     public RemoteLogStatement(@JsonProperty("level") LogLevel level,
+                              @JsonProperty("logger") String logger,
                               @JsonProperty("message") String message,
                               @JsonProperty("stackTrace") String[] stackTrace) {
         this.level = level;
+        this.logger = logger;
         this.message = message;
         this.stackTrace = stackTrace;
     }

@@ -5,6 +5,7 @@ import be.bagofwords.util.NumUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 public class BinComputer {
 
@@ -38,6 +39,10 @@ public class BinComputer {
     }
 
     public int[] getBinCounts(double[] bins) {
+        return getBinCounts(bins, allValues);
+    }
+
+    public static int[] getBinCounts(double[] bins, List<Double> allValues) {
         int[] counts = new int[bins.length + 1];
         for (Double val : allValues) {
             int ind = NumUtils.getBin(bins, val);

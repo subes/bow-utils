@@ -42,6 +42,18 @@ public class SerializationUtilsTest {
         checkConversion(null, TestEnum.class);
     }
 
+    @Test
+    public void testCompression() {
+        String objectToCompress = "0";
+        for (int i = 0; i < 10; i++) {
+            objectToCompress = objectToCompress + objectToCompress;
+        }
+        byte[] bytes = SerializationUtils.objectToCompressedBytes(objectToCompress, String.class);
+        Assert.assertTrue(bytes.length < SerializationUtils.objectToBytes(objectToCompress, String.class).length / 5);
+        String decompressedString = SerializationUtils.compressedBytesToObject(bytes, String.class);
+        Assert.assertEquals(objectToCompress, decompressedString);
+    }
+
     private void checkConversion(Object obj, Class objectClass) {
         Assert.assertEquals(obj, SerializationUtils.bytesToObjectCheckForNull(SerializationUtils.objectToBytesCheckForNull(obj, objectClass), objectClass));
     }

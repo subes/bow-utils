@@ -1,7 +1,6 @@
 package be.bagofwords.util;
 
 import be.bagofwords.logging.Log;
-import org.xerial.snappy.Snappy;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -255,7 +254,7 @@ public class SocketConnection implements Closeable {
             Log.i("RI <-- " + objectAsBytes.length + " bytes");
         }
         if (isCompressed) {
-            objectAsBytes = Snappy.uncompress(objectAsBytes);
+            objectAsBytes = IOUtils.uncompressBytes(objectAsBytes);
         }
         return SerializationUtils.bytesToObjectCheckForNull(objectAsBytes, objectClass, genericParams);
     }
@@ -281,7 +280,7 @@ public class SocketConnection implements Closeable {
             //not a fixed length object
             if (objectAsBytes.length > 1024 * 1024) {
                 //compress large object
-                objectAsBytes = Snappy.compress(objectAsBytes);
+                objectAsBytes = IOUtils.compressBytes(objectAsBytes);
                 writeInt(-objectAsBytes.length);
             } else {
                 writeInt(objectAsBytes.length);

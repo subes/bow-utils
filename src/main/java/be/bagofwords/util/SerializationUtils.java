@@ -3,7 +3,6 @@ package be.bagofwords.util;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import org.xerial.snappy.Snappy;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -251,19 +250,11 @@ public class SerializationUtils {
     }
 
     public static <T> byte[] objectToCompressedBytes(T value, Class<T> objectClass) {
-        try {
-            return Snappy.compress(objectToBytes(value, objectClass));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return IOUtils.compressBytes(objectToBytes(value, objectClass));
     }
 
     public static <T> T compressedBytesToObject(byte[] bytes, Class<T> objectClass) {
-        try {
-            return bytesToObject(Snappy.uncompress(bytes), objectClass);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return bytesToObject(IOUtils.uncompressBytes(bytes), objectClass);
     }
 
     public static byte[] longToBytes(long value) {
@@ -335,9 +326,9 @@ public class SerializationUtils {
 
     public static void intToBytes(int value, byte[] buffer, int offset) {
         buffer[offset] = (byte) ((value >>> 24));
-        buffer[offset+1] = (byte) ((value >>> 16));
-        buffer[offset+2] = (byte) ((value >>> 8));
-        buffer[offset+3] = (byte) ((value));
+        buffer[offset + 1] = (byte) ((value >>> 16));
+        buffer[offset + 2] = (byte) ((value >>> 8));
+        buffer[offset + 3] = (byte) ((value));
     }
 
     public static int bytesToInt(byte[] bytes) {

@@ -3,7 +3,6 @@ package be.bagofwords.counts;
 import be.bagofwords.logging.Log;
 import be.bagofwords.util.Pair;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import it.unimi.dsi.fastutil.Function;
 
 import java.util.*;
 import java.util.concurrent.Semaphore;
@@ -18,15 +17,6 @@ public class DoubleCounter<T extends Object> {
         DoubleCounter<T> result = new DoubleCounter<>();
         for (S item : items) {
             Pair<T, Double> counts = mapping.mapItem(item);
-            result.inc(counts.getF(), counts.getS());
-        }
-        return result;
-    }
-
-    public static <S, T> DoubleCounter<T> create(Collection<S> items, Function<S, Pair<T, Double>> mapping) {
-        DoubleCounter<T> result = new DoubleCounter<>();
-        for (S item : items) {
-            Pair<T, Double> counts = mapping.get(item);
             result.inc(counts.getF(), counts.getS());
         }
         return result;

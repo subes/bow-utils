@@ -1,5 +1,6 @@
 package be.bagofwords.counts;
 
+import be.bagofwords.iterator.IterableUtils;
 import be.bagofwords.logging.Log;
 import be.bagofwords.util.Pair;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -13,10 +14,10 @@ public class Counter<T extends Object> {
     private long cachedTotal;
     private Semaphore lock;
 
-    public static <S, T> Counter<T> create(Collection<S> items, ItemMapping<S, T> mapping) {
+    public static <S, T> Counter<T> create(Collection<S> items, IterableUtils.MappingFunction<S, T> mapping) {
         Counter<T> result = new Counter<>();
         for (S item : items) {
-            result.inc(mapping.mapItem(item));
+            result.inc(mapping.map(item));
         }
         return result;
     }
@@ -158,10 +159,6 @@ public class Counter<T extends Object> {
         for (Pair<T, Long> value : values) {
             counts.put(value.getFirst(), value.getSecond());
         }
-    }
-
-    public interface ItemMapping<S, T> {
-        T mapItem(S item);
     }
 
     @Override

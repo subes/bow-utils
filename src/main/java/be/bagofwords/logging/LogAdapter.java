@@ -1,10 +1,8 @@
 package be.bagofwords.logging;
 
-/**
- * Created by koen on 27/04/17.
- */
-public interface LogImpl {
+public interface LogAdapter {
 
     void log(LogLevel level, Class logger, String message, Throwable throwable);
 
+    void log(LogLevel level, String logger, String message, Throwable throwable);
 }

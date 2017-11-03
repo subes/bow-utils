@@ -1,7 +1,6 @@
 package be.bagofwords.util;
 
 import be.bagofwords.text.*;
-import it.unimi.dsi.fastutil.chars.CharArrayList;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -18,7 +17,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
     public static final int NUM_OF_PADDED_SPACES = 1;
 
     static final char[] quotes = {'"', '\'', '‘', '’', '“', '”'};
-    private static final CharArrayList characterMapping = new CharArrayList();
+    private static final ArrayList<Character> characterMapping = new ArrayList<>();
 
     /**
      * Remove slashes from inputString

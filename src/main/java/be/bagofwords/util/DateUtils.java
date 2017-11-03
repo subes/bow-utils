@@ -7,20 +7,25 @@ import java.util.Date;
 public class DateUtils extends org.apache.commons.lang3.time.DateUtils {
 
     public static Date createDate(int year, int month, int day) {
-        Date date = new Date();
-        date = DateUtils.truncate(date, Calendar.HOUR);
-        date = DateUtils.setYears(date, year);
-        date = DateUtils.setMonths(date, month - 1);
-        date = DateUtils.setDays(date, day);
-        return date;
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.YEAR, year);
+        calendar.set(Calendar.MONTH, month - 1);
+        calendar.set(Calendar.DAY_OF_MONTH, day);
+
+        Date result = calendar.getTime();
+        return DateUtils.truncate(result, Calendar.DATE);
     }
 
     public static Date createDate(int year, int month, int day, int hours, int minutes, int seconds) {
-        Date date = createDate(year, month, day);
-        date = DateUtils.setHours(date, hours);
-        date = DateUtils.setMinutes(date, minutes);
-        date = DateUtils.setSeconds(date, seconds);
-        return date;
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.YEAR, year);
+        calendar.set(Calendar.MONTH, month - 1);
+        calendar.set(Calendar.DAY_OF_MONTH, day);
+        calendar.set(Calendar.HOUR_OF_DAY, day);
+        calendar.set(Calendar.MINUTE, day);
+        calendar.set(Calendar.SECOND, day);
+        Date result = calendar.getTime();
+        return DateUtils.truncate(result, Calendar.SECOND);
     }
 
     public static Date createDate(String date) {

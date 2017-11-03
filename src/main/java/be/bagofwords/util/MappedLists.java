@@ -1,9 +1,8 @@
 package be.bagofwords.util;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import be.bagofwords.iterator.IterableUtils;
+
+import java.util.*;
 
 public class MappedLists<S, T> extends HashMap<S, List<T>> {
 
@@ -20,6 +19,14 @@ public class MappedLists<S, T> extends HashMap<S, List<T>> {
         if (result == null) {
             result = new ArrayList<>();
             put((S) key, result);
+        }
+        return result;
+    }
+
+    public static <S, T> MappedLists<S, T> create(Collection<T> items, IterableUtils.MappingFunction<T, S> mappingFunction) {
+        MappedLists<S, T> result = new MappedLists<>();
+        for (T item : items) {
+            result.get(mappingFunction.map(item)).add(item);
         }
         return result;
     }
