@@ -41,4 +41,11 @@ public class PackedRemoteObject {
         hash = 31 * hash + classSources.hashCode();
         return hash;
     }
+
+    @Override
+    public String toString() {
+        return "PackedRemoteObject{" +
+                "objectClassName='" + objectClassName + '\'' +
+                '}';
+    }
 }
