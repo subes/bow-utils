@@ -1,6 +1,7 @@
 package be.bagofwords.util;
 
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
@@ -29,6 +30,11 @@ public class SerializationUtils {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void registerJacksonModule(Module module) {
+        defaultObjectMapper.registerModule(module);
+        prettyPrintObjectMapper.registerModule(module);
     }
 
     public static String serializeObject(Object object) {
