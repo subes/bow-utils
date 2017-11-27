@@ -8,7 +8,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class SerializationUtils {
@@ -18,18 +19,14 @@ public class SerializationUtils {
     public static final int INT_NULL = Integer.MAX_VALUE;
     public static final float FLOAT_NULL = Float.MAX_VALUE;
     public static final byte[] STRING_NULL;
-    private static final String ENCODING = "UTF-8";
+    private static final Charset CHARSET = StandardCharsets.UTF_8;
 
     private static final ObjectMapper prettyPrintObjectMapper = new ObjectMapper();
     private static final ObjectMapper defaultObjectMapper = new ObjectMapper();
 
     static {
         prettyPrintObjectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        try {
-            STRING_NULL = "xyNUlLxy".getBytes(ENCODING);
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        STRING_NULL = "xyNUlLxy".getBytes(CHARSET);
     }
 
     public static void registerJacksonModule(Module module) {
@@ -75,18 +72,12 @@ public class SerializationUtils {
     }
 
     public static String bytesToString(byte[] key, int offset, int length) {
-        try {
-            return new String(key, offset, length, ENCODING);
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return new String(key, offset, length, CHARSET);
     }
 
     public static byte[] stringToBytes(String key) {
         try {
-            return key.getBytes(ENCODING);
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
+            return key.getBytes(CHARSET);
         } catch (OutOfMemoryError outOfMemoryError) {
             throw new RuntimeException("OOM while trying to convert " + key.substring(0, Math.min(100, key.length())) + " of length " + key.length(), outOfMemoryError);
         }
