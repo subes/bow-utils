@@ -1,7 +1,6 @@
 package be.bagofwords.util;
 
 import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
@@ -29,9 +28,9 @@ public class SerializationUtils {
         STRING_NULL = "xyNUlLxy".getBytes(CHARSET);
     }
 
-    public static void registerJacksonModule(Module module) {
-        defaultObjectMapper.registerModule(module);
-        prettyPrintObjectMapper.registerModule(module);
+    public static void modifyMapper(MapperModifier mapperModifier) {
+        mapperModifier.modifyMapper(defaultObjectMapper);
+        mapperModifier.modifyMapper(prettyPrintObjectMapper);
     }
 
     public static String serializeObject(Object object) {
@@ -375,5 +374,9 @@ public class SerializationUtils {
         } else {
             return -1;
         }
+    }
+
+    public interface MapperModifier {
+        void modifyMapper(ObjectMapper mapper);
     }
 }
