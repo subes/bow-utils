@@ -2,6 +2,7 @@ package be.bagofwords.util;
 
 import org.apache.commons.io.IOUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -42,8 +43,20 @@ public class ExecuteProcess {
         return exec(Integer.MAX_VALUE, params);
     }
 
+    public static ExecutionResult exec(File directory, String... params) throws IOException, InterruptedException {
+        return exec(Integer.MAX_VALUE, directory, params);
+    }
+
     public static ExecutionResult exec(int timeout, String... params) throws IOException, InterruptedException {
-        return exec(timeout, new ProcessBuilder(params));
+        return exec(timeout, null, params);
+    }
+
+    public static ExecutionResult exec(int timeout, File directory, String... params) throws IOException, InterruptedException {
+        ProcessBuilder processBuilder = new ProcessBuilder(params);
+        if (directory != null) {
+            processBuilder.directory(directory);
+        }
+        return exec(timeout, processBuilder);
     }
 
     private static class StreamToStringThread extends Thread {
