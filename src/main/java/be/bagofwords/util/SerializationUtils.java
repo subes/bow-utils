@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class SerializationUtils {
@@ -18,12 +17,19 @@ public class SerializationUtils {
     public static final int INT_NULL = Integer.MAX_VALUE;
     public static final float FLOAT_NULL = Float.MAX_VALUE;
     public static final byte[] STRING_NULL;
-    private static final Charset CHARSET = StandardCharsets.UTF_8;
+    private static final Charset CHARSET;
 
     private static final ObjectMapper prettyPrintObjectMapper = new ObjectMapper();
     private static final ObjectMapper defaultObjectMapper = new ObjectMapper();
 
     static {
+        Charset utf8;
+        try {
+            utf8 = java.nio.charset.StandardCharsets.UTF_8;
+        } catch (NoClassDefFoundError error) {
+            utf8 = Charset.forName("UTF-8");
+        }
+        CHARSET = utf8;
         prettyPrintObjectMapper.enable(SerializationFeature.INDENT_OUTPUT);
         STRING_NULL = "xyNUlLxy".getBytes(CHARSET);
     }
