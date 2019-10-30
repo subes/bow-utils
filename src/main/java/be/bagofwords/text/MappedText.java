@@ -111,11 +111,17 @@ public class MappedText implements Serializable, Text {
     }
 
     public Pair<Integer, Integer> getMappingToOrig(int startPos, int endPos) {
-        endPos = endPos - 1; //make end inclusive
         int mappedStart = startPos < mappingToOrig.length ? mappingToOrig[startPos] : -1;
-        int mappedEnd = endPos < mappingToOrig.length ? mappingToOrig[endPos] : -1;
-        if (mappedEnd != -1) {
-            mappedEnd++; //We want to return the end non-inclusive
+        int mappedEnd;
+        if (startPos == endPos) {
+            //zero-width regex
+            mappedEnd = mappedStart;
+        } else {
+            endPos = endPos - 1; //make end inclusive
+            mappedEnd = endPos < mappingToOrig.length ? mappingToOrig[endPos] : -1;
+            if (mappedEnd != -1) {
+                mappedEnd++; //We want to return the end non-inclusive
+            }
         }
         return new Pair<>(mappedStart, mappedEnd);
     }
@@ -136,7 +142,7 @@ public class MappedText implements Serializable, Text {
             if (mapping.getFirst() != -1 && mapping.getSecond() != -1) {
                 Log.i(text[i] + " " + orig.substring(mapping.getFirst(), mapping.getSecond()));
             } else {
-                Log.i(text[i]+"");
+                Log.i(text[i] + "");
             }
         }
     }
@@ -146,7 +152,7 @@ public class MappedText implements Serializable, Text {
         for (int i = 0; i < orig.length(); i++) {
             Pair<Integer, Integer> mapping = getMappingFromOrig(i, i + 1);
             if (mapping.getFirst() == -1 || mapping.getSecond() == -1)
-                Log.i(orig.charAt(i)+"");
+                Log.i(orig.charAt(i) + "");
             else
                 Log.i(orig.charAt(i) + " " + curr.substring(mapping.getFirst(), mapping.getSecond()));
         }

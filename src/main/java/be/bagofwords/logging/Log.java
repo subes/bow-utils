@@ -75,6 +75,10 @@ public class Log {
         log(ERROR, message, null);
     }
 
+    public static void e(Throwable throwable) {
+        log(ERROR, "", throwable);
+    }
+
     public static void e(String message, Throwable throwable) {
         log(ERROR, message, throwable);
     }

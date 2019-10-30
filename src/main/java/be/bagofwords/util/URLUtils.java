@@ -9,7 +9,7 @@ public class URLUtils {
 
     public static String makeAbsolute(String url, String context) {
         if (url.startsWith("/")) {
-            return getDomain(context) + url;
+            return getProtocol(context) + "://" + getDomain(context) + url;
         } else {
             //Is relative link.
             int posSlash = context.length() - 1;
@@ -67,7 +67,7 @@ public class URLUtils {
         }
     }
 
-    static final Pattern linkP = Pattern.compile("(?<=href=)[^>\n ]+");
+    static final Pattern linkP = Pattern.compile("(?<=href=\"?'?)[^>\n\"' ]+");
 
     public static ArrayList<String> findLinks(CharSequence html, String context) {
         Matcher m = linkP.matcher(html);
@@ -93,8 +93,8 @@ public class URLUtils {
             Matcher pM = protocolP.matcher(link);
             if (pM.find()) {
                 //Has protocol :
-                if (pM.group().equalsIgnoreCase("http://"))
-                    result.add(link.substring(7));
+                //if (pM.group().equalsIgnoreCase("http://"))
+                result.add(link);
             } else {
                 //No protocol specified:
                 String lowCaLink = link.toLowerCase();

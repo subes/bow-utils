@@ -52,14 +52,14 @@ public class URLDownloader {
     private String[] responseHeaders;
     private int endOfHeader;
 
-	/*
+    /*
      * statusses:
-	 *  -10 not a valid url
-	 *  -11 infinite redirect
-	 *  -12 length of extracted header contains 0 lines
-	 *  -14 can't decode raw content as defaultEncoding
-	 *  -15 can't decode rawcontent with found encoding
-	 */
+     *  -10 not a valid url
+     *  -11 infinite redirect
+     *  -12 length of extracted header contains 0 lines
+     *  -14 can't decode raw content as defaultEncoding
+     *  -15 can't decode rawcontent with found encoding
+     */
 
     /**
      * URLDownloader
@@ -202,7 +202,6 @@ public class URLDownloader {
     public ArrayList<String> getRedirectedURLs() {
         return redirectedUrls;
     }
-
 
     private UrlParts splitUrl(String url) {
         return new UrlParts(URLUtils.getProtocol(url), URLUtils.getDomain(url), URLUtils.getPath(url));
@@ -464,7 +463,8 @@ public class URLDownloader {
     private void printRequestHeaders(UrlParts urlParts, PrintStream ps) {
         ps.print("Host: " + urlParts.getHost().trim() + "\r\n");
         ps.print("User-Agent: " + userAgent + "\r\n");
-        ps.print("Accept-Charset: utf-8");
+        ps.print("Accept: text/html\r\n");
+        ps.print("Accept-Charset: utf-8\r\n");
 
         for (String header : extraRequestHeaders) {
             ps.print(header + "\r\n");
